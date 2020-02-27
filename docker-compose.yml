@@ -1,0 +1,13 @@
+version: "3.3"
+
+services:
+  nn_framework:
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    command: sshd
+    container_name: nn_framework
+    stdin_open: true
+    tty: true
+    ports:
+      - "127.0.0.1:2223:22"
