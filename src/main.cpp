@@ -4,9 +4,15 @@
 
 class ILayer {
 public:
-    [[nodiscard]] virtual std::string ToString() const = 0;
+    [[nodiscard]] virtual std::string ToString() const {
+        throw std::logic_error("NotImplementedException");
+    };
 
-    [[nodiscard]] virtual arma::mat Predict(arma::mat input) const = 0;
+    [[nodiscard]] virtual arma::mat Predict(const arma::mat &) const {
+        throw std::logic_error("NotImplementedException");
+    };
+
+    virtual ~ILayer() = default;
 };
 
 class DenseLayer : public ILayer {
@@ -24,7 +30,7 @@ public:
         return "Dense:\n" + output.str();
     }
 
-    [[nodiscard]] arma::mat Predict(arma::mat input) const override {
+    [[nodiscard]] arma::mat Predict(const arma::mat &input) const override {
         return input * weights;
     }
 
@@ -37,12 +43,8 @@ public:
     [[nodiscard]] std::string ToString() const override {
         return "SigmoidActivation";
     }
-
-    ~SigmoidActivationLayer() {
-        std::cout << "Destructing!!" << std::endl;
-    }
-
-    [[nodiscard]] arma::mat Predict(arma::mat input) const override {
+    
+    [[nodiscard]] arma::mat Predict(const arma::mat &input) const override {
         auto expInput = arma::exp(input);
         return expInput / (expInput + arma::ones(arma::size(input)));
     }
@@ -67,7 +69,7 @@ public:
         return output.str();
     }
 
-    [[nodiscard]] arma::mat Predict(arma::mat input) const override {
+    [[nodiscard]] arma::mat Predict(const arma::mat &input) const override {
         auto output = input;
         for (auto &&layer : layers) {
             output = layer->Predict(output);
@@ -90,6 +92,6 @@ int main(int argc, char **argv) {
     auto output = neural_network.Predict(input);
     input.print("Input:");
     output.print("Output:");
-    
+
     return 0;
 }
