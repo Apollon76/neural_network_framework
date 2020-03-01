@@ -21,7 +21,7 @@ public:
         return output.str();
     }
 
-    void Fit(const arma::mat &input, const arma::mat &output) const {
+    void Fit(const arma::mat &input, const arma::mat &output) {
         DLOG(INFO) << "Fitting neural network...";
         std::vector<arma::mat> inter_outputs = {input};
         for (auto &&layer : layers) {
@@ -29,6 +29,7 @@ public:
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
         std::vector<std::vector<arma::mat>> layer_gradients = {};
+        // todo: specify cost function
         std::vector<arma::mat> output_gradients = {2 * (inter_outputs.back() - output)};
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; i--) {
             DLOG(INFO) << "Propagate gradients backward for layer: " << layers[i]->GetName();
