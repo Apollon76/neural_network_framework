@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 
 RUN apt update && apt install -y \
 	ssh \
+	git \
 	make \
 	cmake \
 	clang-8 \
@@ -29,6 +30,19 @@ RUN cmake .
 RUN make && make install
 WORKDIR /
 RUN rm -rf /tmp/arma
+
+# Glog:
+RUN git clone https://github.com/google/glog.git /tmp/glog
+WORKDIR /tmp/glog
+RUN cmake -H. -Bbuild
+RUN cmake --build build
+RUN cmake --build build --target install
+
+# # Gtest:
+# WORKDIR /usr/src/gtest
+# RUN cmake CMakeLists.txt
+# RUN make
+# RUN cp *.a /usr/lib
 
 # sshd:
 ENV LANG C.UTF-8
