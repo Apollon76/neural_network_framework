@@ -36,6 +36,10 @@ public:
     DenseLayer(arma::uword n_rows, arma::uword n_cols) : weights_and_bias(arma::randu(n_rows + 1, n_cols)) {
     }
 
+    arma::mat GetWeightsAndBias() const {
+        return weights_and_bias;
+    }
+
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
         stream << std::endl;
@@ -96,7 +100,7 @@ public:
     }
 
     [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &,
+            const arma::mat &input,
             const arma::mat &output_gradients
     ) const override {
         auto expOutput = arma::exp(output_gradients);
