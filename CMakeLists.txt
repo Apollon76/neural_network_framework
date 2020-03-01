@@ -8,3 +8,4 @@ include(cmake/CompileOptions.cmake)
 include(cmake/Sanitize.cmake)
 
 add_subdirectory(src)
+add_subdirectory(tests)

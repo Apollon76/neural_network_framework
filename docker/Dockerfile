@@ -15,7 +15,8 @@ RUN apt update && apt install -y \
 	wget \
 	autoconf \
     libopenblas-dev \
-    liblapack-dev
+    liblapack-dev \
+    libgtest-dev
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -38,11 +39,12 @@ RUN cmake -H. -Bbuild
 RUN cmake --build build
 RUN cmake --build build --target install
 
-# # Gtest:
-# WORKDIR /usr/src/gtest
-# RUN cmake CMakeLists.txt
-# RUN make
-# RUN cp *.a /usr/lib
+# Gtest:
+WORKDIR /usr/src/gtest
+RUN cmake CMakeLists.txt
+RUN make
+RUN cp libgtest.a /usr/lib
+RUN cp libgtest_main.a /usr/lib
 
 # sshd:
 ENV LANG C.UTF-8
