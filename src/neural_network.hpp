@@ -12,6 +12,10 @@ public:
         layers.emplace_back(std::move(layer));
     }
 
+    ILayer *GetLayer(int layer_id) const {
+        return layers[layer_id].get();
+    }
+
     [[nodiscard]] std::string ToString() const {
         std::stringstream output;
         output << "Layers:\n";
@@ -30,11 +34,15 @@ public:
         }
         std::vector<std::vector<arma::mat>> layer_gradients = {};
         // todo: specify cost function
-        std::vector<arma::mat> output_gradients = {2 * (inter_outputs.back() - output)};
+        std::vector<arma::mat> output_gradients = {2 * (inter_outputs.back() - output) / input.n_rows};
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; i--) {
             DLOG(INFO) << "Propagate gradients backward for layer: " << layers[i]->GetName();
+            DLOG(INFO) << "Intermediate output: " << inter_outputs[i] << std::endl
+                       << "Output gradients: " << output_gradients.back();
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], output_gradients.back());
             auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients);
+            DLOG(INFO) << "Gradients for layer: " << layers[i]->GetName() << " - " << std::endl
+                       << gradients.layer_gradients;
             layers[i]->ApplyGradients(gradients_to_apply);
             output_gradients.push_back(gradients.input_gradients);
         }

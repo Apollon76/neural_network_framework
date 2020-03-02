@@ -36,7 +36,7 @@ public:
     DenseLayer(arma::uword n_rows, arma::uword n_cols) : weights_and_bias(arma::randu(n_rows + 1, n_cols) - 0.5) {
     }
 
-    arma::mat GetWeightsAndBias() const {
+    [[nodiscard]] arma::mat GetWeightsAndBias() const {
         return weights_and_bias;
     }
 
