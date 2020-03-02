@@ -56,20 +56,18 @@ public:
     }
 
     [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &input,
+            const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
         DLOG(INFO) << "Pull gradients for dense layer: "
-                   << "input=[" + FormatDimensions(input) + "], "
+                   << "inputs=[" + FormatDimensions(inputs) + "], "
                    << "output_gradients=[" + FormatDimensions(output_gradients) + "], "
                    << "weights_and_bias=[" + FormatDimensions((weights_and_bias)) + "]";
         auto weights = weights_and_bias.head_rows(weights_and_bias.n_rows - 1);
         auto bias = weights_and_bias.tail_rows(1);
-        DLOG(INFO) << "Shape1: [" << FormatDimensions(input.t() * output_gradients) << "], Shape2: ["
-                   << FormatDimensions(arma::sum(output_gradients, 0)) << "]";
         return Gradients{
                 output_gradients * arma::trans(weights),
-                arma::join_cols(input.t() * output_gradients, arma::sum(output_gradients, 0))
+                arma::join_cols(inputs.t() * output_gradients, arma::sum(output_gradients, 0))
         };
     }
 
@@ -95,17 +93,16 @@ public:
     }
 
     [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
-        auto expInput = arma::exp(input);
-        return expInput / (expInput + 1);
+        return 1 / (1 + arma::exp(-input));
     }
 
     [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &input,
+            const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
-        auto expOutput = arma::exp(output_gradients);
+        auto expOutput = arma::exp(-inputs);
         return Gradients{
-                expOutput / arma::square(expOutput + 1),
+                output_gradients % (expOutput / arma::square(expOutput + 1)),
                 arma::mat()
         };
     }

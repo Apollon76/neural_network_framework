@@ -5,6 +5,8 @@
 class IOptimizer {
 public:
     [[nodiscard]] virtual arma::mat GetGradientStep(const arma::mat &gradients) const = 0;
+
+    virtual ~IOptimizer() = default;
 };
 
 class Optimizer : public IOptimizer {
