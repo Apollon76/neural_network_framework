@@ -1,5 +1,8 @@
 #include <gmock/gmock.h>
 #include "src/layers.hpp"
+#include "src/neural_network.hpp"
+#include "src/optimizer.hpp"
+#include "src/utils.hpp"
 
 double sigmoidGradient(double x) {
     return exp(x) / pow((exp(x) + 1), 2);
@@ -126,7 +129,31 @@ TEST(DenseLayerTest, TestApply) {
     MATRIX_SHOULD_BE_EQUAL_TO(actual, expected);
 }
 
+TEST(NeuralNetworkTest, TestLinearDependency) {
+    auto network = NeuralNetwork(std::make_unique<Optimizer>(1));
+    network.AddLayer(std::make_unique<DenseLayer>(1, 1));
+    auto inputs = CreateMatrix(
+            {
+                    {1},
+                    {5}
+            });
+    auto outputs = CreateMatrix(
+            {
+                    {2 * 1 + 3},
+                    {2 * 5 + 3}
+            });
+    for (int i = 0; i < 10; i++) {
+        network.Fit(inputs, outputs);
+    }
+    MATRIX_SHOULD_BE_EQUAL_TO(
+            dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
+            CreateMatrix({{2},
+                          {3}}),
+            1e-5);
+}
+
 int main(int argc, char **argv) {
+    google::InitGoogleLogging(argv[0]);
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
