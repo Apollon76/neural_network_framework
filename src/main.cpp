@@ -30,17 +30,14 @@ void GenerateInputs(arma::mat &inputs, arma::mat &outputs) {
 int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
     DLOG(INFO) << "Start example neural network...";
-    auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.001));
+    auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(2, 3));
     neural_network.AddLayer(std::make_unique<SigmoidActivationLayer>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(3, 1));
     arma::mat inputs, outputs;
     GenerateInputs(inputs, outputs);
-    for (int i = 0; i < 1000; i++) {
-        neural_network.Fit(inputs, outputs);
-        auto loss = neural_network.Predict(inputs);
-        loss -= outputs;
-        std::cout << "Loss: " << arma::sum(arma::pow(loss, 2));
+    for (int i = 0; i < 10000; i++) {
+        std::cout << "Loss: " << neural_network.Fit(inputs, outputs) << std::endl;
     }
     std::cout << arma::join_rows(neural_network.Predict(inputs), outputs) << std::endl;
     std::cout << neural_network.ToString() << std::endl;
