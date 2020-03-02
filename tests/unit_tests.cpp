@@ -5,7 +5,7 @@
 #include "src/utils.hpp"
 
 double sigmoidGradient(double x) {
-    return exp(x) / pow((exp(x) + 1), 2);
+    return exp(-x) / pow((exp(-x) + 1), 2);
 }
 
 const double eps = 1e-9;
@@ -23,19 +23,19 @@ TEST(SigmoidActivationLayerTest, TestPullGradientsBackward) {
     auto layer = SigmoidActivationLayer();
     auto input_batch = arma::mat(
             {
-                    {0, 0, 0},
-                    {0, 0, 0}
+                    {1, 2, 3},
+                    {4, 5, 6}
             });
     auto output_gradients = arma::mat(
             {
-                    {1, 2, 3},
-                    {4, 5, 6}
+                    {10, 20, 30},
+                    {40, 50, 60}
             });
     auto gradients = layer.PullGradientsBackward(input_batch, output_gradients);
     auto expected_gradients = arma::mat(
             {
-                    {sigmoidGradient(1), sigmoidGradient(2), sigmoidGradient(3)},
-                    {sigmoidGradient(4), sigmoidGradient(5), sigmoidGradient(6)},
+                    {10 * sigmoidGradient(1), 20 * sigmoidGradient(2), 30 * sigmoidGradient(3)},
+                    {40 * sigmoidGradient(4), 50 * sigmoidGradient(5), 60 * sigmoidGradient(6)},
             }
     );
     MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, arma::mat(0, 0));
@@ -130,7 +130,7 @@ TEST(DenseLayerTest, TestApply) {
 }
 
 TEST(NeuralNetworkTest, TestLinearDependency) {
-    auto network = NeuralNetwork(std::make_unique<Optimizer>(1));
+    auto network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
     auto inputs = CreateMatrix(
             {
@@ -142,14 +142,62 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
                     {2 * 1 + 3},
                     {2 * 5 + 3}
             });
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10000; i++) {
         network.Fit(inputs, outputs);
     }
     MATRIX_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
-            CreateMatrix({{2},
-                          {3}}),
+            CreateMatrix(
+                    {
+                            {2},
+                            {3}
+                    }),
             1e-5);
+}
+
+TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
+    auto network = NeuralNetwork(std::make_unique<Optimizer>(0.1), std::make_unique<MSELoss>());
+    network.AddLayer(std::make_unique<DenseLayer>(1, 1));
+    network.AddLayer(std::make_unique<SigmoidActivationLayer>());
+    auto inputs = CreateMatrix(
+            {
+                    {-2},
+                    {-1},
+                    {0},
+                    {1},
+                    {2},
+            });
+    auto outputs = CreateMatrix(
+            {
+                    {1.0 / (exp(-(2 * (-2) + 3)) + 1)},
+                    {1.0 / (exp(-(2 * (-1) + 3)) + 1)},
+                    {1.0 / (exp(-(2 * 0 + 3)) + 1)},
+                    {1.0 / (exp(-(2 * 1 + 3)) + 1)},
+                    {1.0 / (exp(-(2 * 2 + 3)) + 1)},
+            });
+    for (int i = 0; i < 10000; i++) {
+        network.Fit(inputs, outputs);
+    }
+    MATRIX_SHOULD_BE_EQUAL_TO(
+            dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
+            CreateMatrix(
+                    {
+                            {2},
+                            {3}
+                    }),
+            1e-1);
+}
+
+TEST(MSETest, TestLoss) {
+    auto loss = MSELoss();
+    ASSERT_DOUBLE_EQ(loss.GetLoss(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}})),
+                     pow(1 - 5, 2) + pow(2 - 9, 2) + pow(3 + 1, 2));
+}
+
+TEST(MSETest, TestDerivative) {
+    auto loss = MSELoss();
+    auto gradients = loss.GetGradients(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}}));
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients, CreateMatrix({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
 }
 
 int main(int argc, char **argv) {
