@@ -46,6 +46,10 @@ RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
 
+# Csv:
+RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
+RUN mkdir /usr/include/csv && cp /tmp/csv/csv.h /usr/include/csv
+
 # sshd:
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8

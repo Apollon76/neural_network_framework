@@ -9,7 +9,8 @@ struct Gradients {
     arma::mat layer_gradients;
 };
 
-std::string FormatDimensions(const arma::mat &mat) {
+template<typename T>
+std::string FormatDimensions(const arma::Mat<T> &mat) {
     return std::to_string(mat.n_rows) + "x" + std::to_string(mat.n_cols);
 }
 
@@ -100,10 +101,45 @@ public:
             const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
-        auto expOutput = arma::exp(-inputs);
+        arma::mat expOutput = arma::exp(-inputs);
         return Gradients{
                 output_gradients % (expOutput / arma::square(expOutput + 1)),
                 arma::mat()
+        };
+    }
+
+    void ApplyGradients(const arma::mat &) override {}
+};
+
+
+class SoftmaxActivationLayer : public ILayer {
+ public:
+    [[nodiscard]] std::string ToString() const override {
+        return GetName();
+    }
+
+    [[nodiscard]] std::string GetName() const override {
+        return "SoftmaxActivation";
+    }
+
+    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
+        arma::mat shifted_input = input - arma::max(input, 1) * arma::ones(1, input.n_cols); // todo (mpivko): do we need shift?
+        arma::mat repeated_sum = arma::sum(arma::exp(shifted_input), 1) * arma::ones(1, input.n_cols);
+        return arma::exp(shifted_input) / repeated_sum;
+    }
+
+    [[nodiscard]] Gradients PullGradientsBackward(
+        const arma::mat &inputs,
+        const arma::mat &output_gradients
+    ) const override {
+        arma::mat forward_outputs = Apply(inputs); // todo (mpivko): maybe cache this in field?
+
+        arma::mat sum = arma::sum(output_gradients % forward_outputs, 1);
+        arma::mat repeated_sum = sum * arma::ones(1, output_gradients.n_cols);
+
+        return Gradients{
+            (output_gradients % forward_outputs) - (repeated_sum % forward_outputs),
+            arma::mat()
         };
     }
 

@@ -21,3 +21,14 @@ public:
         return 2 * (inputs - outputs) / inputs.n_rows;
     }
 };
+
+class CategoricalCrossEntropyLoss : public ILoss {
+ public:
+    [[nodiscard]] double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const override {
+        return arma::mean(arma::sum(outputs % arma::log(inputs), 1) * -1);
+    }
+
+    [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
+        return -outputs / inputs;
+    }
+};
