@@ -64,7 +64,7 @@ void mnist() {
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
     LOG(INFO) << "Start mnist neural network...";
-    auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.0001), std::make_unique<CategoricalCrossEntropyLoss>());
+    auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.00001), std::make_unique<CategoricalCrossEntropyLoss>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(input_sz, 100));
     neural_network.AddLayer(std::make_unique<SigmoidActivationLayer>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(100, 10));
