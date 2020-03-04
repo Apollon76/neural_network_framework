@@ -19,3 +19,9 @@ constexpr void ensure(bool value, const std::string& error) {
         throw std::runtime_error(error);
     }
 }
+
+constexpr void ensure(bool value) {
+    if (!value) {
+        throw std::runtime_error("precondition check failed");
+    }
+}

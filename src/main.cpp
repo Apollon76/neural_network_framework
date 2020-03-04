@@ -4,6 +4,7 @@
 #include <glog/logging.h>
 #include <src/io/csv.hpp>
 #include <src/data_processing/data_utils.hpp>
+#include <src/scoring/scoring.hpp>
 #include "neural_network.hpp"
 #include "layers.hpp"
 #include "optimizer.hpp"
@@ -72,15 +73,17 @@ void mnist() {
     auto n_iter = 10000;
     for (int i = 0; i < n_iter; i++) {
         auto loss = neural_network.Fit(x_train, y_train);
-        if (i % 1 == 0) {
+        if (i % 5 == 0) {
+            auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+            auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_test), y_test);
+            std::cout << "(" << i << "/" << n_iter << ") Loss: " << loss << " Train score: " << train_score << " Test score: " << test_score << std::endl;
+        } else {
             std::cout << "(" << i << "/" << n_iter << ") Loss: " << loss << std::endl;
         }
     }
     std::cout << arma::join_rows(neural_network.Predict(x_test), y_test) << std::endl;
     std::cout << neural_network.ToString() << std::endl;
 }
-
-
 
 int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
