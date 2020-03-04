@@ -101,9 +101,8 @@ public:
             const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
-        arma::mat expOutput = arma::exp(-inputs);
         return Gradients{
-                output_gradients % (expOutput / arma::square(expOutput + 1)),
+                output_gradients % (1 / (1 + arma::exp(-inputs)) % (1 - 1 / (1 + arma::exp(-inputs)))),
                 arma::mat()
         };
     }
