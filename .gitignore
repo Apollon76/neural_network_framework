@@ -3,4 +3,4 @@
 # CMake
 cmake-build-*/
 
-data/*.csv
+data/**/*.csv

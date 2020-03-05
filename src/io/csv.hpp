@@ -7,9 +7,9 @@
 #include <src/utils.hpp>
 
 namespace nn_framework::io {
-    class CsvDataProvider {
+    class CsvReader {
      public:
-        explicit CsvDataProvider(const std::string& input_path, bool skip_header=false) :
+        explicit CsvReader(const std::string& input_path, bool skip_header=false) :
             reader(input_path),
             skip_header(skip_header) {
         }
@@ -55,5 +55,40 @@ namespace nn_framework::io {
 
         ::io::LineReader reader;
         bool skip_header;
+    };
+
+    class CsvWriter {
+    public:
+        explicit CsvWriter(const std::string& input_path) : stream(input_path) {
+        }
+
+        template<typename T>
+        void WriteRow(const std::initializer_list<T>& list) {
+            bool first = true;
+            for (const auto& item : list) {
+                if (!first) {
+                    WriteDelim();
+                }
+                WriteToken(item);
+                first = false;
+            }
+            WriteLineBreak();
+        }
+
+    private:
+        template<typename T>
+        void WriteToken(const T& token) {
+            stream << token;
+        }
+
+        void WriteDelim() {
+            WriteToken(',');
+        }
+
+        void WriteLineBreak() {
+            WriteToken('\n');
+        }
+
+        std::ofstream stream;
     };
 }

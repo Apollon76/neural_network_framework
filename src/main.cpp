@@ -31,7 +31,8 @@ void GenerateInputs(arma::mat &inputs, arma::mat &outputs) {
 }
 
 std::tuple<arma::mat, arma::mat> LoadMnist(const std::string& path) {
-    auto csv_data_provider = nn_framework::io::CsvDataProvider(path);
+    Timer timer("Load of "+ path, true);
+    auto csv_data_provider = nn_framework::io::CsvReader(path, true);
     auto data = CreateMatrix(csv_data_provider.LoadData<int>());
     auto X = data.tail_cols(data.n_cols - 1);
     auto y = data.head_cols(1);
@@ -39,7 +40,14 @@ std::tuple<arma::mat, arma::mat> LoadMnist(const std::string& path) {
     return {arma::conv_to<arma::mat>::from(X), arma::conv_to<arma::mat>::from(y_one_hot)};
 }
 
-void sample() {
+arma::mat LoadMnistX(const std::string& path) {
+    Timer timer("Load of "+ path, true);
+    auto csv_data_provider = nn_framework::io::CsvReader(path, true);
+    auto data = CreateMatrix(csv_data_provider.LoadData<int>());
+    return arma::conv_to<arma::mat>::from(data);
+}
+
+void Sample() {
     DLOG(INFO) << "Start example neural network...";
     auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(2, 3));
@@ -54,40 +62,80 @@ void sample() {
     std::cout << neural_network.ToString() << std::endl;
 }
 
-void mnist() {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    auto [x_train, y_train] = LoadMnist("../../data/mnist_train.csv");
-    auto [x_test, y_test] = LoadMnist("../../data/mnist_test.csv");
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Load done in: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
-
-    auto input_sz = x_train.n_cols;
-    std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
-
-    LOG(INFO) << "Start mnist neural network...";
+NeuralNetwork BuildMnistNN() {
     auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.00001), std::make_unique<CategoricalCrossEntropyLoss>());
-    neural_network.AddLayer(std::make_unique<DenseLayer>(input_sz, 100));
+    neural_network.AddLayer(std::make_unique<DenseLayer>(784, 100));
     neural_network.AddLayer(std::make_unique<SigmoidActivationLayer>());
     neural_network.AddLayer(std::make_unique<DenseLayer>(100, 10));
     neural_network.AddLayer(std::make_unique<SoftmaxActivationLayer>());
-    auto n_iter = 10000;
-    for (int i = 0; i < n_iter; i++) {
-        auto loss = neural_network.Fit(x_train, y_train);
+    return neural_network;
+}
+
+void FitNN(NeuralNetwork *neural_network,
+           int epochs,
+           const arma::mat &x_train,
+           const arma::mat &y_train,
+           const std::optional<arma::mat> &x_test=std::nullopt,
+           const std::optional<arma::mat> &y_test=std::nullopt) {
+    Timer timer("Fitting ");
+    for (int i = 0; i < epochs; i++) {
+        auto loss = neural_network->Fit(x_train, y_train);
         if (i % 5 == 0) {
-            auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
-            auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_test), y_test);
-            std::cout << "(" << i << "/" << n_iter << ") Loss: " << loss << " Train score: " << train_score << " Test score: " << test_score << std::endl;
+            auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
+            if (x_test.has_value()) {
+                auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(*x_test), *y_test);
+                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score << " Test score: " << test_score << std::endl;
+            } else {
+                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score << std::endl;
+            }
         } else {
-            std::cout << "(" << i << "/" << n_iter << ") Loss: " << loss << std::endl;
+            std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << std::endl;
         }
     }
-    std::cout << arma::join_rows(neural_network.Predict(x_test), y_test) << std::endl;
-    std::cout << neural_network.ToString() << std::endl;
+}
+
+void DigitRecognizer() {
+    auto [x_train, y_train] = LoadMnist("../../data/kaggle-digit-recognizer/train.csv");
+    auto x_test = LoadMnistX("../../data/kaggle-digit-recognizer/test.csv");
+
+    std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
+    LOG(INFO) << "Start digit-recognizer neural network...";
+
+    auto neural_network = BuildMnistNN();
+    FitNN(&neural_network, 20, x_train, y_train);
+
+    auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+    std::cout << "Final train score: " << train_score << std::endl;
+
+    arma::ucolvec predictions = arma::index_max(neural_network.Predict(x_test), 1);
+    std::string predictions_path = "../../data/kaggle-digit-recognizer/predictions.csv";
+    nn_framework::io::CsvWriter writer(predictions_path);
+    writer.WriteRow({"ImageId", "Label"});
+    for (arma::u64 i = 0; i < predictions.n_rows; i++) {
+        writer.WriteRow({i + 1, predictions.at(i, 0)});
+    }
+    std::cout << "Predictions written to " << predictions_path << std::endl;
+}
+
+void Mnist() {
+    auto [x_train, y_train] = LoadMnist("../../data/mnist/mnist_train.csv");
+    auto [x_test, y_test] = LoadMnist("../../data/mnist/mnist_test.csv");
+
+    std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
+
+    LOG(INFO) << "Start mnist neural network...";
+    auto neural_network = BuildMnistNN();
+    FitNN(&neural_network, 20, x_train, y_train, x_test, y_test);
+
+    auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+    auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_test), y_test);
+    std::cout << "Final train score: " << train_score << " final test score: " << test_score << std::endl;
 }
 
 int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
-    mnist();
-    //sample();
+    //Mnist();
+    DigitRecognizer();
+    //Sample();
     return 0;
 }
