@@ -134,19 +134,7 @@ void Mnist() {
 
 int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
-    arma::mat inputs, outputs;
-    GenerateInputs(inputs, outputs);
-    std::cout << inputs.n_rows << ' ' << inputs.n_cols << std::endl;
-    auto result = inputs;
-    result = result.for_each([](arma::mat::elem_type& value) {
-        if (value > 0)
-            value = 1;
-        else
-            value = 0;
-    });
-    std::cout << inputs.row(0) << std::endl;
-    std::cout << result.row(0) << std::endl;
     //Mnist();
-//    DigitRecognizer();
-    //Sample();
+    DigitRecognizer();
+//    Sample();
 }
