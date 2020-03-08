@@ -1,7 +1,7 @@
 version: "3.3"
 
 services:
-  nn_framework:
+  development:
     build:
       context: docker
       dockerfile: Dockerfile
@@ -11,3 +11,21 @@ services:
     tty: true
     ports:
       - "127.0.0.1:2223:22"
+
+  debug:
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    command: bash
+
+  test:
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    entrypoint: /test.sh
+
+  run:
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    entrypoint: /run.sh

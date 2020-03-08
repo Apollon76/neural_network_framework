@@ -64,5 +64,7 @@ RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
 
 # entry point:
-COPY docker-entry-point.sh /
-ENTRYPOINT ["/docker-entry-point.sh"]
+COPY development.sh /
+COPY run.sh /
+COPY test.sh /
+ENTRYPOINT ["/development.sh"]

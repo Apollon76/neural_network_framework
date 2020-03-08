@@ -132,12 +132,12 @@ TEST(DenseLayerTest, TestApply) {
 TEST(NeuralNetworkTest, TestLinearDependency) {
     auto network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
-    auto inputs = CreateMatrix(
+    auto inputs = CreateMatrix<double>(
             {
                     {1},
                     {5}
             });
-    auto outputs = CreateMatrix(
+    auto outputs = CreateMatrix<double>(
             {
                     {2 * 1 + 3},
                     {2 * 5 + 3}
@@ -147,7 +147,7 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
     }
     MATRIX_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
-            CreateMatrix(
+            CreateMatrix<double>(
                     {
                             {2},
                             {3}
@@ -159,7 +159,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
     auto network = NeuralNetwork(std::make_unique<Optimizer>(0.1), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
     network.AddLayer(std::make_unique<SigmoidActivationLayer>());
-    auto inputs = CreateMatrix(
+    auto inputs = CreateMatrix<double>(
             {
                     {-2},
                     {-1},
@@ -167,7 +167,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
                     {1},
                     {2},
             });
-    auto outputs = CreateMatrix(
+    auto outputs = CreateMatrix<double>(
             {
                     {1.0 / (exp(-(2 * (-2) + 3)) + 1)},
                     {1.0 / (exp(-(2 * (-1) + 3)) + 1)},
@@ -180,7 +180,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
     }
     MATRIX_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
-            CreateMatrix(
+            CreateMatrix<double>(
                     {
                             {2},
                             {3}
@@ -190,14 +190,14 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
 
 TEST(MSETest, TestLoss) {
     auto loss = MSELoss();
-    ASSERT_DOUBLE_EQ(loss.GetLoss(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}})),
+    ASSERT_DOUBLE_EQ(loss.GetLoss(CreateMatrix<double>({{1, 2, 3}}), CreateMatrix<double>({{5, 9, -1}})),
                      pow(1 - 5, 2) + pow(2 - 9, 2) + pow(3 + 1, 2));
 }
 
 TEST(MSETest, TestDerivative) {
     auto loss = MSELoss();
-    auto gradients = loss.GetGradients(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}}));
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients, CreateMatrix({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
+    auto gradients = loss.GetGradients(CreateMatrix<double>({{1, 2, 3}}), CreateMatrix<double>({{5, 9, -1}}));
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients, CreateMatrix<double>({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
 }
 
 int main(int argc, char **argv) {

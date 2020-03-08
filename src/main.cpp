@@ -95,8 +95,8 @@ void FitNN(NeuralNetwork *neural_network,
 }
 
 void DigitRecognizer() {
-    auto [x_train, y_train] = LoadMnist("../../data/kaggle-digit-recognizer/train.csv");
-    auto x_test = LoadMnistX("../../data/kaggle-digit-recognizer/test.csv");
+    auto [x_train, y_train] = LoadMnist("/nn_framework/data/kaggle-digit-recognizer/train.csv");
+    auto x_test = LoadMnistX("/nn_framework/data/kaggle-digit-recognizer/test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
     LOG(INFO) << "Start digit-recognizer neural network...";
@@ -108,7 +108,7 @@ void DigitRecognizer() {
     std::cout << "Final train score: " << train_score << std::endl;
 
     arma::ucolvec predictions = arma::index_max(neural_network.Predict(x_test), 1);
-    std::string predictions_path = "../../data/kaggle-digit-recognizer/predictions.csv";
+    std::string predictions_path = "/nn_framework/data/kaggle-digit-recognizer/predictions.csv";
     nn_framework::io::CsvWriter writer(predictions_path);
     writer.WriteRow({"ImageId", "Label"});
     for (arma::u64 i = 0; i < predictions.n_rows; i++) {
