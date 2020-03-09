@@ -5,6 +5,10 @@
 #include "loss.hpp"
 #include "layers/interface.h"
 #include <memory>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 
 class NeuralNetwork {
 public:
@@ -65,6 +69,14 @@ public:
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
         return inter_outputs.back();
+    }
+
+    json Serialize() const {
+        json data;
+        for (const auto& layer : layers) {
+            data.push_back(layer->Serialize());
+        }
+        return data;
     }
 
 

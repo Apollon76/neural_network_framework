@@ -2,8 +2,12 @@
 
 #include <armadillo>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include <glog/logging.h>
 #include "interface.h"
+
+using json = nlohmann::json;
+
 
 class SigmoidActivationLayer : public ILayer {
 public:
@@ -31,6 +35,12 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "sigmoid_activation"}
+        };
+    }
 };
 
 
@@ -66,6 +76,12 @@ class SoftmaxActivationLayer : public ILayer {
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "softmax_activation"}
+        };
+    }
 };
 
 
@@ -106,6 +122,12 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "relu_activation"}
+        };
+    }
 };
 
 
@@ -135,4 +157,10 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "tanh_activation"}
+        };
+    }
 };
