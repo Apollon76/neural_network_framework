@@ -7,9 +7,10 @@
 #include <src/data_processing/data_utils.hpp>
 #include <src/scoring/scoring.hpp>
 #include "neural_network.hpp"
-#include "layers.hpp"
+#include "src/layers/activations.hpp"
 #include "optimizer.hpp"
 #include "utils.hpp"
+#include "layers/dense.hpp"
 
 void GenerateInputs(arma::mat &inputs, arma::mat &outputs) {
     std::random_device random_device;

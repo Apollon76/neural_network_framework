@@ -1,8 +1,9 @@
 #pragma once
 
-#include "layers.hpp"
+#include "src/layers/activations.hpp"
 #include "optimizer.hpp"
 #include "loss.hpp"
+#include "layers/interface.h"
 #include <memory>
 
 class NeuralNetwork {

@@ -2,6 +2,7 @@
 
 #include <armadillo>
 #include "utils.hpp"
+#include "layers/interface.h"
 
 class IOptimizer {
 public:

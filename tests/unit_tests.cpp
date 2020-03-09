@@ -1,8 +1,9 @@
 #include <gmock/gmock.h>
-#include "src/layers.hpp"
+#include "src/layers/activations.hpp"
 #include "src/neural_network.hpp"
 #include "src/optimizer.hpp"
 #include "src/utils.hpp"
+#include "dense.hpp"
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
