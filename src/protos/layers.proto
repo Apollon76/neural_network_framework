@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message DenseWeights {
+    string name = 1;
+    uint32 n_rows = 2;
+    uint32 n_cols = 3;
+    message Vector {
+        repeated double scalars = 1;
+    }
+    repeated Vector vectors = 4;
+}

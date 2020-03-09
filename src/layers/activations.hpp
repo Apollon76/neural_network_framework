@@ -5,7 +5,6 @@
 #include <glog/logging.h>
 #include "interface.h"
 
-
 class SigmoidActivationLayer : public ILayer {
 public:
     [[nodiscard]] std::string ToString() const override {
@@ -145,8 +144,8 @@ public:
             const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
-        auto forward_outputs = Apply(inputs);
-        auto differentiated = (1 - arma::square(forward_outputs));
+        arma::mat forward_outputs = Apply(inputs);
+        arma::mat differentiated = (1 - arma::square(forward_outputs));
         return Gradients{
                 output_gradients % (differentiated),
                 arma::mat()

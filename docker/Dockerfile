@@ -68,6 +68,16 @@ RUN groupadd -g 10000 user
 RUN useradd -u 10000 -g 10000 -m user && yes password | passwd user
 RUN mkdir /var/run/sshd
 
+# protobuf
+RUN yes | apt-get install autoconf automake libtool g++
+RUN git clone https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+WORKDIR /tmp/protobuf
+RUN git submodule update --init --recursive
+RUN ./autogen.sh
+RUN ./configure
+RUN make && make check && make install
+RUN ldconfig
+
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
 
