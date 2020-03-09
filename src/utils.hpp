@@ -4,6 +4,12 @@
 #include <vector>
 #include <chrono>
 
+#define UNUSED(x)   \
+do {                \
+    (void) x;      \
+} while(false);
+
+
 template<typename T>
 arma::Mat<T> CreateMatrix(const std::vector<std::vector<T>> &values) {
     auto mat = arma::Mat<T>(values.size(), values[0].size());

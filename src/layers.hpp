@@ -101,8 +101,9 @@ public:
             const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
+        auto activation_result = Apply(inputs);
         return Gradients{
-                output_gradients % (1 / (1 + arma::exp(-inputs)) % (1 - 1 / (1 + arma::exp(-inputs)))),
+                output_gradients % ((activation_result) % (1 - activation_result)),
                 arma::mat()
         };
     }
@@ -178,6 +179,35 @@ public:
         });
         return Gradients{
                 output_gradients % differentiated,
+                arma::mat()
+        };
+    }
+
+    void ApplyGradients(const arma::mat &) override {}
+};
+
+
+class TanhActivationLayer : public ILayer {
+public:
+    [[nodiscard]] std::string ToString() const override {
+        return GetName();
+    }
+    [[nodiscard]] std::string GetName() const override {
+        return "Tanh Activation";
+    }
+
+    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
+        return (arma::exp(input) - arma::exp(-input)) / (arma::exp(input) + arma::exp(-input));
+    }
+
+    [[nodiscard]] Gradients PullGradientsBackward(
+            const arma::mat &inputs,
+            const arma::mat &output_gradients
+    ) const override {
+        auto forward_outputs = Apply(inputs);
+        auto differentiated = (1 - arma::square(forward_outputs));
+        return Gradients{
+                output_gradients % (differentiated),
                 arma::mat()
         };
     }

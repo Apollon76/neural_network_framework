@@ -10,7 +10,7 @@ case "$1" in
     cd $BUILD_DIR
     cmake /nn_framework
 	make
-    ./src/main
+    ./src/main "${@:2}"
     ;;
 "sshd")
     /usr/sbin/sshd -D

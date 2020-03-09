@@ -12,8 +12,9 @@ public:
 
     }
 
-    void AddLayer(std::unique_ptr<ILayer> layer) {
+    NeuralNetwork& AddLayer(std::unique_ptr<ILayer> layer) {
         layers.emplace_back(std::move(layer));
+        return *this;
     }
 
     [[nodiscard]] ILayer *GetLayer(int layer_id) const {
@@ -45,7 +46,7 @@ public:
             DLOG(INFO) << "Intermediate output: " << std::endl << inter_outputs[i] << std::endl
                        << "Output gradients: " << std::endl << output_gradients.back();
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], output_gradients.back());
-            auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients);
+            auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients, layers[i].get());
             DLOG(INFO) << "Gradients for layer: " << layers[i]->GetName() << std::endl
                        << gradients.layer_gradients;
             layers[i]->ApplyGradients(gradients_to_apply);
