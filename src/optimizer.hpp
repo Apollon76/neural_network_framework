@@ -62,7 +62,7 @@ public:
         }
 
         auto currentMean = previous_mean[layer] = rho * previous_gradient + (1 - rho) * arma::square(gradients);
-        return -learning_rate * (gradients / arma::sqrt(currentMean + epsilon)).eval();
+        return -learning_rate * (gradients / arma::sqrt(currentMean + epsilon));
     }
 
 private:
