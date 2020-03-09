@@ -9,5 +9,7 @@ services:
     container_name: nn_framework
     stdin_open: true
     tty: true
+    volumes:
+      - "./:/nn_framework"
     ports:
-      - "127.0.0.1:2223:22"
+      - "127.0.0.1:${PORT:-2223}:22"

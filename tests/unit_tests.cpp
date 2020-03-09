@@ -229,6 +229,61 @@ TEST(ReLUActivationLayerTest, TestReLULayer) {
     MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
 }
 
+TEST(TanhActivationLayerTest, TestTanhLayer) {
+    auto layer = TanhActivationLayer();
+    auto input_batch = arma::mat(
+            {
+                    {1,  2,  3},
+                    {-1, -2, -3}
+            });
+    auto actual = layer.Apply(input_batch);
+    auto expected = arma::mat(
+            {
+                    {0.7615942,  0.9640276,  0.9950548},
+                    {-0.7615942, -0.9640276, -0.9950548}
+            });
+    MATRIX_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), expected,
+                              1e-6
+    );
+
+    auto output_gradients = arma::mat(
+            {
+                    {10,  20,  30},
+                    {-10, -20, -30}
+            });
+    auto gradients = layer.PullGradientsBackward(input_batch, output_gradients);
+    auto expected_gradients = arma::mat(
+            {
+                    {4.199743,  1.4130175,  0.29598176},
+                    {-4.199743, -1.4130175, -0.29598176}
+            });
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, arma::mat(0, 0));
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients, 1e-6);
+}
+
+TEST(MomentumOptimizerTest, TestDifferentLayers) {
+    MomentumOptimizer optimizer(0.5, 0.1);
+    auto firstLayer = DenseLayer(1, 1);
+    auto secondLayer = DenseLayer(1, 1);
+
+    auto firstLayerGradientStep = optimizer.GetGradientStep(arma::mat({1, 2, 3}), &firstLayer);
+    auto secondLayerGradientStep = optimizer.GetGradientStep(arma::mat({10, 20, 30}), &secondLayer);
+
+    MATRIX_SHOULD_BE_EQUAL_TO(firstLayerGradientStep, arma::mat{-0.5, -1, -1.5});
+    MATRIX_SHOULD_BE_EQUAL_TO(secondLayerGradientStep, arma::mat{-5, -10, -15});
+}
+
+TEST(MomentumOptimizerTest, TestMomentum) {
+    MomentumOptimizer optimizer(0.5, 0.1);
+    auto layer = DenseLayer(1, 1);
+
+    auto firstGradientStep = optimizer.GetGradientStep(arma::mat({100, 200, 300}), &layer);
+    auto secondGradientStep = optimizer.GetGradientStep(arma::mat({10, 20, 30}), &layer);
+
+    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, arma::mat{-50, -100, -150});
+    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, arma::mat{-10, -20, -30});
+}
+
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     ::testing::InitGoogleTest(&argc, argv);

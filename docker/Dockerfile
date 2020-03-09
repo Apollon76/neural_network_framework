@@ -50,6 +50,10 @@ RUN cp libgtest_main.a /usr/lib
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
 RUN mkdir /usr/include/csv && cp /tmp/csv/csv.h /usr/include/csv
 
+# Argument Parser
+RUN git clone https://github.com/jarro2783/cxxopts.git /tmp/cxxopts
+RUN cp /tmp/cxxopts/include/cxxopts.hpp /usr/include/cxxopts.hpp
+
 # sshd:
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
