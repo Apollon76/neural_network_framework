@@ -93,3 +93,50 @@ private:
 
     std::unordered_map<const ILayer*, arma::mat> previous_mean;
 };
+
+class AdamOptimizer : public IOptimizer {
+    using mapping_type = std::unordered_map<const ILayer *, arma::mat>;
+public:
+    explicit AdamOptimizer(double _learning_rate = 0.001, double _beta_1 = 0.9, double _beta_2 = 0.999,
+                           double _eps = 1e-7)
+            : learning_rate(_learning_rate), beta_1(_beta_1), beta_2(_beta_2), epsilon(_eps) {
+    }
+
+    [[nodiscard]] arma::mat GetGradientStep(const arma::mat &gradients, const ILayer *layer) override {
+        auto previous_gradient_avg = GetOrCreatePrevious(layer, average_of_gradients, arma::size(gradients));
+        auto previous_square_gradient_avg = GetOrCreatePrevious(layer, average_of_squares_of_gradients,
+                                                                arma::size(gradients));
+
+        auto cur_avg = average_of_gradients[layer] = beta_1 * previous_gradient_avg + (1 - beta_1) * gradients;
+        auto cur_square_avg = average_of_squares_of_gradients[layer] =
+                                      beta_2 * previous_square_gradient_avg + (1 - beta_2) * arma::square(gradients);
+
+        return -learning_rate * gradients / arma::sqrt(cur_square_avg + epsilon);
+    }
+
+    [[nodiscard]] json Serialize() const override {
+        return {
+                {"optimizer_type", "adam"},
+                {"params",         {{"learning_rate", learning_rate}, {"beta_1", beta_1}, {"beta_2", beta_2}, {"eps", epsilon}}}
+        };
+    }
+
+private:
+    arma::mat GetOrCreatePrevious(const ILayer *layer, mapping_type &mapping, arma::SizeMat size) {
+        auto it = mapping.find(layer);
+        arma::mat previous;
+        if (it != mapping.end()) {
+            return it->second;
+        }
+        previous.zeros(size);
+        return previous;
+    }
+
+private:
+    double learning_rate;
+    double beta_1;
+    double beta_2;
+    double epsilon;
+    mapping_type average_of_gradients;
+    mapping_type average_of_squares_of_gradients;
+};

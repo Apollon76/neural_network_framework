@@ -300,6 +300,19 @@ TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
     MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, arma::mat{-0.5270462 , -0.1588382, -0.158838}, 1e-6);
 }
 
+TEST(AdamOptimizerTest, TestAdamGradientStep) {
+    AdamOptimizer optimizer(0.5);
+    auto layer = DenseLayer(1, 1);
+
+    auto firstGradientStep = optimizer.GetGradientStep(arma::mat({1, 2, 3}), &layer);
+    auto secondGradientStep = optimizer.GetGradientStep(arma::mat({-1, -2, -3}), &layer);
+    auto thirdGradientStep = optimizer.GetGradientStep(arma::mat({10000, 2, 3}), &layer);
+
+    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, arma::mat{-15.81059779, -15.81119066, -15.81130046}, 1e-6);
+    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, arma::mat{11.18285631, 11.18306609, 11.18310494}, 1e-6);
+    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, arma::mat{-15.81138814, -9.133237456, -9.133258618}, 1e-6);
+}
+
 TEST(SerializationTest, TestNNSerialization) {
     auto model = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());;
     model.AddLayer(std::make_unique<DenseLayer>(2, 3));
