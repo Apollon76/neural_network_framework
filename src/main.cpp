@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
     cxxopts::Options options("nn framework main");
 
     options.add_options()
-        ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../../data"))
+        ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../.."))
     ;
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data"].as<std::string>();

@@ -24,8 +24,8 @@ endforeach()
 
 file(GLOB PROTOBUF_MODELS_INCLUDES "src/*.pb.cc" "src/*.hpp")
 
-add_library(neural_network_framework SHARED layers.hpp optimizer.hpp neural_network.hpp utils.hpp loss.hpp
-        data_processing/data_utils.hpp io/csv.hpp scoring/scoring.hpp serializable.hpp ${PROTO_HEADER})
+add_library(neural_network_framework SHARED layers/activations.hpp optimizer.hpp neural_network.hpp utils.hpp
+        loss.hpp data_processing/data_utils.hpp io/csv.hpp scoring/scoring.hpp serializable.hpp  ${PROTO_HEADER})
 
 target_link_libraries(neural_network_framework ${ARMADILLO_LIBRARIES} pthread glog::glog ${PROTOBUF_LIBRARY})
 set_target_properties(neural_network_framework PROPERTIES LINKER_LANGUAGE CXX)

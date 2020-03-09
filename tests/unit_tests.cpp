@@ -240,14 +240,14 @@ TEST(ReLUActivationLayerTest, TestReLULayer) {
 }
 
 TEST(TanhActivationLayerTest, TestTanhLayer) {
-    auto layer = TanhActivationLayer();
-    auto input_batch = arma::mat(
+    TanhActivationLayer layer = TanhActivationLayer();
+    arma::mat input_batch = arma::mat(
             {
                     {1,  2,  3},
                     {-1, -2, -3}
             });
-    auto actual = layer.Apply(input_batch);
-    auto expected = arma::mat(
+    arma::mat actual = layer.Apply(input_batch);
+    arma::mat expected = arma::mat(
             {
                     {0.7615942,  0.9640276,  0.9950548},
                     {-0.7615942, -0.9640276, -0.9950548}
@@ -256,13 +256,13 @@ TEST(TanhActivationLayerTest, TestTanhLayer) {
                               1e-6
     );
 
-    auto output_gradients = arma::mat(
+    arma::mat output_gradients = arma::mat(
             {
                     {10,  20,  30},
                     {-10, -20, -30}
             });
-    auto gradients = layer.PullGradientsBackward(input_batch, output_gradients);
-    auto expected_gradients = arma::mat(
+    Gradients gradients = layer.PullGradientsBackward(input_batch, output_gradients);
+    arma::mat expected_gradients = arma::mat(
             {
                     {4.199743,  1.4130175,  0.29598176},
                     {-4.199743, -1.4130175, -0.29598176}
