@@ -136,6 +136,5 @@ int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
     //Mnist();
     DigitRecognizer();
-    //Sample();
-    return 0;
+//    Sample();
 }

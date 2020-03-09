@@ -10,7 +10,7 @@ double sigmoidGradient(double x) {
 
 const double eps = 1e-9;
 
-void MATRIX_SHOULD_BE_EQUAL_TO(const arma::mat &actual, const arma::mat &expected, double tolerance = eps) {
+void MATRIX_SHOULD_BE_EQUAL_TO(const arma::mat& actual, const arma::mat& expected, double tolerance = eps) {
     std::stringstream message;
     message << "Expected matrix: " << std::endl;
     arma::arma_ostream::print(message, expected, true);
@@ -132,12 +132,12 @@ TEST(DenseLayerTest, TestApply) {
 TEST(NeuralNetworkTest, TestLinearDependency) {
     auto network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
-    auto inputs = CreateMatrix(
+    auto inputs = CreateMatrix<double>(
             {
                     {1},
                     {5}
             });
-    auto outputs = CreateMatrix(
+    auto outputs = CreateMatrix<double>(
             {
                     {2 * 1 + 3},
                     {2 * 5 + 3}
@@ -146,8 +146,8 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
         network.Fit(inputs, outputs);
     }
     MATRIX_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
-            CreateMatrix(
+            dynamic_cast<DenseLayer*>(network.GetLayer(0))->GetWeightsAndBias(),
+            CreateMatrix<double>(
                     {
                             {2},
                             {3}
@@ -159,7 +159,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
     auto network = NeuralNetwork(std::make_unique<Optimizer>(0.1), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
     network.AddLayer(std::make_unique<SigmoidActivationLayer>());
-    auto inputs = CreateMatrix(
+    auto inputs = CreateMatrix<double>(
             {
                     {-2},
                     {-1},
@@ -167,7 +167,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
                     {1},
                     {2},
             });
-    auto outputs = CreateMatrix(
+    auto outputs = CreateMatrix<double>(
             {
                     {1.0 / (exp(-(2 * (-2) + 3)) + 1)},
                     {1.0 / (exp(-(2 * (-1) + 3)) + 1)},
@@ -179,8 +179,8 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
         network.Fit(inputs, outputs);
     }
     MATRIX_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer *>(network.GetLayer(0))->GetWeightsAndBias(),
-            CreateMatrix(
+            dynamic_cast<DenseLayer*>(network.GetLayer(0))->GetWeightsAndBias(),
+            CreateMatrix<double>(
                     {
                             {2},
                             {3}
@@ -190,17 +190,46 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
 
 TEST(MSETest, TestLoss) {
     auto loss = MSELoss();
-    ASSERT_DOUBLE_EQ(loss.GetLoss(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}})),
+    ASSERT_DOUBLE_EQ(loss.GetLoss(CreateMatrix<double>({{1, 2, 3}}), CreateMatrix<double>({{5, 9, -1}})),
                      pow(1 - 5, 2) + pow(2 - 9, 2) + pow(3 + 1, 2));
 }
 
 TEST(MSETest, TestDerivative) {
     auto loss = MSELoss();
-    auto gradients = loss.GetGradients(CreateMatrix({{1, 2, 3}}), CreateMatrix({{5, 9, -1}}));
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients, CreateMatrix({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
+    auto gradients = loss.GetGradients(CreateMatrix<double>({{1, 2, 3}}), CreateMatrix<double>({{5, 9, -1}}));
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients, CreateMatrix<double>({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
 }
 
-int main(int argc, char **argv) {
+TEST(ReLUActivationLayerTest, TestReLULayer) {
+    auto layer = ReLUActivationLayer();
+    auto input_batch = arma::mat(
+            {
+                    {1, 2, 3},
+                    {4, 5, -6}
+            });
+    auto actual = layer.Apply(input_batch);
+    MATRIX_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), arma::mat(
+            {
+                    {1, 2, 3},
+                    {4, 5, 0}
+            }));
+
+    auto output_gradients = arma::mat(
+            {
+                    {10, 20, 30},
+                    {40, 50, 60}
+            });
+    auto gradients = layer.PullGradientsBackward(input_batch, output_gradients);
+    auto expected_gradients = arma::mat(
+            {
+                    {10, 20, 30},
+                    {40, 50, 0}
+            });
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, arma::mat(0, 0));
+    MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
+}
+
+int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

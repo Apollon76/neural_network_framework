@@ -144,3 +144,43 @@ class SoftmaxActivationLayer : public ILayer {
 
     void ApplyGradients(const arma::mat &) override {}
 };
+
+
+class ReLUActivationLayer : public ILayer {
+public:
+    [[nodiscard]] std::string ToString() const override {
+        return GetName();
+    }
+
+    [[nodiscard]] std::string GetName() const override {
+        return "ReLU Activation";
+    }
+
+    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
+        auto result = input;
+        result.for_each([](arma::mat::elem_type& value) {
+            if (value < 0)
+                value = 0;
+        });
+        return result;
+    }
+
+    [[nodiscard]] Gradients PullGradientsBackward(
+            const arma::mat &inputs,
+            const arma::mat &output_gradients
+    ) const override {
+        auto differentiated = inputs;
+        differentiated.for_each([](arma::mat::elem_type& value) {
+            if (value < 0)
+                value = 0;
+            else
+                value = 1;
+        });
+        return Gradients{
+                output_gradients % differentiated,
+                arma::mat()
+        };
+    }
+
+    void ApplyGradients(const arma::mat &) override {}
+};
