@@ -99,8 +99,8 @@ void FitNN(NeuralNetwork *neural_network,
 }
 
 void DigitRecognizer(const std::string& data_path, const std::string& output, std::unique_ptr<IOptimizer> optimizer) {
-    auto [x_train, y_train] = LoadMnist(data_path + "/data/kaggle-digit-recognizer/train.csv");
-    auto x_test = LoadMnistX(data_path + "/data/kaggle-digit-recognizer/test.csv");
+    auto [x_train, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv");
+    auto x_test = LoadMnistX(data_path + "/kaggle-digit-recognizer/test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
     LOG(INFO) << "Start digit-recognizer neural network...";
@@ -112,7 +112,7 @@ void DigitRecognizer(const std::string& data_path, const std::string& output, st
     std::cout << "Final train score: " << train_score << std::endl;
 
     arma::ucolvec predictions = arma::index_max(neural_network.Predict(x_test), 1);
-    std::string predictions_path = data_path + "/data/kaggle-digit-recognizer/" + output;
+    std::string predictions_path = data_path + "/kaggle-digit-recognizer/" + output;
     nn_framework::io::CsvWriter writer(predictions_path);
     writer.WriteRow({"ImageId", "Label"});
     for (arma::u64 i = 0; i < predictions.n_rows; i++) {
@@ -122,8 +122,8 @@ void DigitRecognizer(const std::string& data_path, const std::string& output, st
 }
 
 void Mnist(const std::string& data_path) {
-    auto [x_train, y_train] = LoadMnist(data_path + "/data/mnist/mnist_train.csv");
-    auto [x_test, y_test] = LoadMnist(data_path + "/data/mnist/mnist_test.csv");
+    auto [x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
+    auto [x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
