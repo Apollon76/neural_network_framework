@@ -1,19 +1,22 @@
 #pragma once
 
-#include "layers.hpp"
+#include "src/layers/activations.hpp"
 #include "optimizer.hpp"
 #include "loss.hpp"
+#include "layers/interface.h"
 #include <memory>
 
-class NeuralNetwork {
+
+class NeuralNetwork : public ISerializable {
 public:
     explicit NeuralNetwork(std::unique_ptr<IOptimizer> _optimizer, std::unique_ptr<ILoss> _loss)
             : layers(), optimizer(std::move(_optimizer)), loss(std::move(_loss)) {
 
     }
 
-    void AddLayer(std::unique_ptr<ILayer> layer) {
+    NeuralNetwork& AddLayer(std::unique_ptr<ILayer> layer) {
         layers.emplace_back(std::move(layer));
+        return *this;
     }
 
     [[nodiscard]] ILayer *GetLayer(int layer_id) const {
@@ -45,7 +48,7 @@ public:
             DLOG(INFO) << "Intermediate output: " << std::endl << inter_outputs[i] << std::endl
                        << "Output gradients: " << std::endl << output_gradients.back();
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], output_gradients.back());
-            auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients);
+            auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients, layers[i].get());
             DLOG(INFO) << "Gradients for layer: " << layers[i]->GetName() << std::endl
                        << gradients.layer_gradients;
             layers[i]->ApplyGradients(gradients_to_apply);
@@ -63,6 +66,18 @@ public:
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
         return inter_outputs.back();
+    }
+
+    [[nodiscard]] json Serialize() const override {
+        json serialized_layers;
+        for (const auto& layer : layers) {
+            serialized_layers.push_back(layer->Serialize());
+        }
+        return {
+            {"optimizer", optimizer->Serialize()},
+            {"loss", loss->Serialize()},
+            {"layers", serialized_layers}
+        };
     }
 
 

@@ -2,7 +2,8 @@
 
 #include <armadillo>
 
-class ILoss {
+
+class ILoss : public ISerializable {
 public:
     [[nodiscard]] virtual double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const = 0;
 
@@ -20,6 +21,10 @@ public:
     [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
         return 2 * (inputs - outputs) / inputs.n_rows;
     }
+
+    [[nodiscard]] json Serialize() const override {
+        return {"loss_type", "mse"};
+    }
 };
 
 class CategoricalCrossEntropyLoss : public ILoss {
@@ -30,5 +35,9 @@ class CategoricalCrossEntropyLoss : public ILoss {
 
     [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
         return -outputs / inputs;
+    }
+
+    [[nodiscard]] json Serialize() const override {
+        return {"loss_type", "categorical_cross_entropy"};
     }
 };

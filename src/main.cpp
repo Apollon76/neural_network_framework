@@ -2,13 +2,15 @@
 #include <armadillo>
 #include <random>
 #include <glog/logging.h>
+#include <cxxopts.hpp>
 #include <src/io/csv.hpp>
 #include <src/data_processing/data_utils.hpp>
 #include <src/scoring/scoring.hpp>
 #include "neural_network.hpp"
-#include "layers.hpp"
+#include "src/layers/activations.hpp"
 #include "optimizer.hpp"
 #include "utils.hpp"
+#include "layers/dense.hpp"
 
 void GenerateInputs(arma::mat &inputs, arma::mat &outputs) {
     std::random_device random_device;
@@ -62,12 +64,14 @@ void Sample() {
     std::cout << neural_network.ToString() << std::endl;
 }
 
-NeuralNetwork BuildMnistNN() {
-    auto neural_network = NeuralNetwork(std::make_unique<Optimizer>(0.00001), std::make_unique<CategoricalCrossEntropyLoss>());
-    neural_network.AddLayer(std::make_unique<DenseLayer>(784, 100));
-    neural_network.AddLayer(std::make_unique<SigmoidActivationLayer>());
-    neural_network.AddLayer(std::make_unique<DenseLayer>(100, 10));
-    neural_network.AddLayer(std::make_unique<SoftmaxActivationLayer>());
+NeuralNetwork BuildMnistNN(std::unique_ptr<IOptimizer> optimizer) {
+    auto neural_network = NeuralNetwork(std::move(optimizer),
+                                        std::make_unique<CategoricalCrossEntropyLoss>());
+    neural_network.AddLayer(std::make_unique<DenseLayer>(784, 100))
+            .AddLayer(std::make_unique<SigmoidActivationLayer>())
+            .AddLayer(std::make_unique<DenseLayer>(100, 10))
+            .AddLayer(std::make_unique<SoftmaxActivationLayer>());
+
     return neural_network;
 }
 
@@ -94,21 +98,21 @@ void FitNN(NeuralNetwork *neural_network,
     }
 }
 
-void DigitRecognizer() {
-    auto [x_train, y_train] = LoadMnist("../../data/kaggle-digit-recognizer/train.csv");
-    auto x_test = LoadMnistX("../../data/kaggle-digit-recognizer/test.csv");
+void DigitRecognizer(const std::string& data_path, const std::string& output, std::unique_ptr<IOptimizer> optimizer) {
+    auto [x_train, y_train] = LoadMnist(data_path + "/data/kaggle-digit-recognizer/train.csv");
+    auto x_test = LoadMnistX(data_path + "/data/kaggle-digit-recognizer/test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
     LOG(INFO) << "Start digit-recognizer neural network...";
 
-    auto neural_network = BuildMnistNN();
-    FitNN(&neural_network, 20, x_train, y_train);
+    auto neural_network = BuildMnistNN(std::move(optimizer));
+    FitNN(&neural_network, 40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
 
     arma::ucolvec predictions = arma::index_max(neural_network.Predict(x_test), 1);
-    std::string predictions_path = "../../data/kaggle-digit-recognizer/predictions.csv";
+    std::string predictions_path = data_path + "/data/kaggle-digit-recognizer/" + output;
     nn_framework::io::CsvWriter writer(predictions_path);
     writer.WriteRow({"ImageId", "Label"});
     for (arma::u64 i = 0; i < predictions.n_rows; i++) {
@@ -117,14 +121,14 @@ void DigitRecognizer() {
     std::cout << "Predictions written to " << predictions_path << std::endl;
 }
 
-void Mnist() {
-    auto [x_train, y_train] = LoadMnist("../../data/mnist/mnist_train.csv");
-    auto [x_test, y_test] = LoadMnist("../../data/mnist/mnist_test.csv");
+void Mnist(const std::string& data_path) {
+    auto [x_train, y_train] = LoadMnist(data_path + "/data/mnist/mnist_train.csv");
+    auto [x_test, y_test] = LoadMnist(data_path + "/data/mnist/mnist_test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
     LOG(INFO) << "Start mnist neural network...";
-    auto neural_network = BuildMnistNN();
+    auto neural_network = BuildMnistNN(std::make_unique<Optimizer>(0.00001));
     FitNN(&neural_network, 20, x_train, y_train, x_test, y_test);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
@@ -132,9 +136,24 @@ void Mnist() {
     std::cout << "Final train score: " << train_score << " final test score: " << test_score << std::endl;
 }
 
-int main(int, char **argv) {
+int main(int argc, char **argv) {
     google::InitGoogleLogging(argv[0]);
-    //Mnist();
-    DigitRecognizer();
-//    Sample();
+
+    cxxopts::Options options("nn framework main");
+
+    options.add_options()
+        ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../../data"))
+    ;
+    auto parsed_args = options.parse(argc, argv);
+    auto data_path = parsed_args["data"].as<std::string>();
+
+    // Mnist(data_path);
+//    DigitRecognizer(data_path, "predictions-sgd-0.001.csv", std::make_unique<Optimizer>(0.0001));
+//    DigitRecognizer(data_path, "predictions-momentum-0.01.csv", std::make_unique<MomentumOptimizer>(0.0001, 0.0001));
+    DigitRecognizer(data_path, "predictions-rmsprop-0.01-40.csv", std::make_unique<RMSPropOptimizer>(0.01));
+//    DigitRecognizer(data_path, "predictions-adam-0.01.csv", std::make_unique<AdamOptimizer>(0.01));
+//    DigitRecognizer(data_path, "predictions-adam-0.001.csv", std::make_unique<AdamOptimizer>(0.001));
+//    DigitRecognizer(data_path, "predictions-adam-0.0001.csv", std::make_unique<AdamOptimizer>(0.0001));
+    // Sample();
+    return 0;
 }

@@ -4,6 +4,12 @@
 #include <vector>
 #include <chrono>
 
+#define UNUSED(x)   \
+do {                \
+    (void) x;      \
+} while(false);
+
+
 template<typename T>
 arma::Mat<T> CreateMatrix(const std::vector<std::vector<T>> &values) {
     auto mat = arma::Mat<T>(values.size(), values[0].size());
@@ -25,6 +31,11 @@ constexpr void ensure(bool value) {
     if (!value) {
         throw std::runtime_error("precondition check failed");
     }
+}
+
+template<typename T>
+std::string FormatDimensions(const arma::Mat<T> &mat) {
+    return std::to_string(mat.n_rows) + "x" + std::to_string(mat.n_cols);
 }
 
 class Timer {

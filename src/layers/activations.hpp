@@ -3,35 +3,9 @@
 #include <armadillo>
 #include <vector>
 #include <glog/logging.h>
+#include "interface.h"
 #include <layers.pb.h>
 
-struct Gradients {
-    arma::mat input_gradients;
-    arma::mat layer_gradients;
-};
-
-template<typename T>
-std::string FormatDimensions(const arma::Mat<T> &mat) {
-    return std::to_string(mat.n_rows) + "x" + std::to_string(mat.n_cols);
-}
-
-class ILayer {
-public:
-    [[nodiscard]] virtual std::string ToString() const = 0;
-
-    [[nodiscard]] virtual std::string GetName() const = 0;
-
-    [[nodiscard]] virtual arma::mat Apply(const arma::mat &) const = 0;
-
-    [[nodiscard]] virtual Gradients PullGradientsBackward(
-            const arma::mat &input,
-            const arma::mat &output_gradients
-    ) const = 0;
-
-    virtual void ApplyGradients(const arma::mat &gradients) = 0;
-
-    virtual ~ILayer() = default;
-};
 
 class DenseLayer : public ILayer {
 public:
@@ -125,13 +99,20 @@ public:
             const arma::mat &inputs,
             const arma::mat &output_gradients
     ) const override {
+        auto activation_result = Apply(inputs);
         return Gradients{
-                output_gradients % (1 / (1 + arma::exp(-inputs)) % (1 - 1 / (1 + arma::exp(-inputs)))),
+                output_gradients % ((activation_result) % (1 - activation_result)),
                 arma::mat()
         };
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "sigmoid_activation"}
+        };
+    }
 };
 
 
@@ -167,6 +148,12 @@ class SoftmaxActivationLayer : public ILayer {
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "softmax_activation"}
+        };
+    }
 };
 
 
@@ -207,4 +194,45 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "relu_activation"}
+        };
+    }
+};
+
+
+class TanhActivationLayer : public ILayer {
+public:
+    [[nodiscard]] std::string ToString() const override {
+        return GetName();
+    }
+    [[nodiscard]] std::string GetName() const override {
+        return "Tanh Activation";
+    }
+
+    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
+        return (arma::exp(input) - arma::exp(-input)) / (arma::exp(input) + arma::exp(-input));
+    }
+
+    [[nodiscard]] Gradients PullGradientsBackward(
+            const arma::mat &inputs,
+            const arma::mat &output_gradients
+    ) const override {
+        auto forward_outputs = Apply(inputs);
+        auto differentiated = (1 - arma::square(forward_outputs));
+        return Gradients{
+                output_gradients % (differentiated),
+                arma::mat()
+        };
+    }
+
+    void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "tanh_activation"}
+        };
+    }
 };
