@@ -6,7 +6,9 @@ A study project inspired by [this desciption](https://github.com/yandexdataschoo
 The easiest way to build, run and develop is by using docker.
 
 ## Unarchive mnist dataset
+```
 unzip data/kaggle-digit-recognizer/digit-recognizer.zip -d data/kaggle-digit-recognizer/ 
+```
 
 ## Run main
 ```
