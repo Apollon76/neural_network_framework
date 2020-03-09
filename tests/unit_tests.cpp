@@ -279,9 +279,24 @@ TEST(MomentumOptimizerTest, TestMomentum) {
 
     auto firstGradientStep = optimizer.GetGradientStep(arma::mat({100, 200, 300}), &layer);
     auto secondGradientStep = optimizer.GetGradientStep(arma::mat({10, 20, 30}), &layer);
+    auto thirdGradientStep = optimizer.GetGradientStep(arma::mat({10, 20, 30}), &layer);
 
     MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, arma::mat{-50, -100, -150});
     MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, arma::mat{-10, -20, -30});
+    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, arma::mat{-6, -12, -18});
+}
+
+TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
+    RMSPropOptimizer optimizer(0.5, 0.1);
+    auto layer = DenseLayer(1, 1);
+
+    auto firstGradientStep = optimizer.GetGradientStep(arma::mat({1, 2, 3}), &layer);
+    auto secondGradientStep = optimizer.GetGradientStep(arma::mat({10, 20, 30}), &layer);
+    auto thirdGradientStep = optimizer.GetGradientStep(arma::mat({10000, 2, 3}), &layer);
+
+    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, arma::mat{-0.5270463, -0.5270463, -0.5270463}, 1e-6);
+    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, arma::mat{-0.526783  , -0.526782, -0.526782}, 1e-6);
+    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, arma::mat{-0.5270462 , -0.1588382, -0.158838}, 1e-6);
 }
 
 int main(int argc, char** argv) {
