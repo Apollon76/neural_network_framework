@@ -129,6 +129,15 @@ TEST(DenseLayerTest, TestApply) {
     MATRIX_SHOULD_BE_EQUAL_TO(actual, expected);
 }
 
+TEST(DenseLayerTest, TestSerialization) {
+    auto layer = DenseLayer(5, 5);
+    std::stringstream weights;
+    layer.SaveWeights(&weights);
+    auto anotherLayer = DenseLayer(5, 5);
+    anotherLayer.LoadWeights(&weights);
+    MATRIX_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), anotherLayer.GetWeightsAndBias());
+}
+
 TEST(NeuralNetworkTest, TestLinearDependency) {
     auto network = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());
     network.AddLayer(std::make_unique<DenseLayer>(1, 1));
