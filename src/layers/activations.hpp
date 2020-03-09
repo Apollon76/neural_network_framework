@@ -2,11 +2,8 @@
 
 #include <armadillo>
 #include <vector>
-#include <nlohmann/json.hpp>
 #include <glog/logging.h>
 #include "interface.h"
-
-using json = nlohmann::json;
 
 
 class SigmoidActivationLayer : public ILayer {

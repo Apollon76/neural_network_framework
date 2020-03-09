@@ -3,16 +3,15 @@
 #include <armadillo>
 #include <vector>
 #include <glog/logging.h>
-#include <nlohmann/json.hpp>
+#include <src/serializable.hpp>
 
-using json = nlohmann::json;
 
 struct Gradients {
     arma::mat input_gradients;
     arma::mat layer_gradients;
 };
 
-class ILayer {
+class ILayer : public ISerializable {
 public:
     [[nodiscard]] virtual std::string ToString() const = 0;
 
@@ -26,8 +25,6 @@ public:
     ) const = 0;
 
     virtual void ApplyGradients(const arma::mat &gradients) = 0;
-
-    virtual json Serialize() const = 0;
 
     virtual ~ILayer() = default;
 };

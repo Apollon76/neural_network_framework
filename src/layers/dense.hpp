@@ -1,10 +1,7 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
 #include "activations.hpp"
 #include "../utils.hpp"
-
-using json = nlohmann::json;
 
 
 class DenseLayer : public ILayer {

@@ -4,7 +4,7 @@
 #include "utils.hpp"
 #include "layers/interface.h"
 
-class IOptimizer {
+class IOptimizer : public ISerializable {
 public:
     [[nodiscard]] virtual arma::mat GetGradientStep(const arma::mat& gradients, const ILayer* layer) = 0;
 
@@ -15,9 +15,16 @@ class Optimizer : public IOptimizer {
 public:
     explicit Optimizer(double _learning_rate) : learning_rate(_learning_rate) {}
 
-    [[nodiscard]] arma::mat GetGradientStep(const arma::mat &gradients, const ILayer *layer) override {
+    [[nodiscard]] arma::mat GetGradientStep(const arma::mat& gradients, const ILayer* layer) override {
         UNUSED(layer)
         return -gradients * learning_rate;
+    }
+
+    [[nodiscard]] json Serialize() const override {
+        return {
+                {"optimizer_type", "optimizer"},
+                {"params", {{"learning_rate", learning_rate}}}
+        };
     }
 
 private:
@@ -39,6 +46,13 @@ public:
         return previous_values[layer] = momentum * previous_gradient - learning_rate * gradients;
     }
 
+    [[nodiscard]] json Serialize() const override {
+        return {
+                {"optimizer_type", "momentum"},
+                {"params", {{"learning_rate", learning_rate}, {"momentum", momentum}}}
+        };
+    }
+
 private:
     double learning_rate;
     double momentum;
@@ -48,7 +62,7 @@ private:
 
 class RMSPropOptimizer : public IOptimizer {
 public:
-    explicit RMSPropOptimizer(double _learning_rate=0.001, double _rho=0.9, double _eps=1e-7)
+    explicit RMSPropOptimizer(double _learning_rate = 0.001, double _rho = 0.9, double _eps = 1e-7)
             : learning_rate(_learning_rate), rho(_rho), epsilon(_eps) {
     }
 
@@ -63,6 +77,13 @@ public:
 
         auto currentMean = previous_mean[layer] = rho * previous_gradient + (1 - rho) * arma::square(gradients);
         return -learning_rate * (gradients / arma::sqrt(currentMean + epsilon)).eval();
+    }
+
+    [[nodiscard]] json Serialize() const override {
+        return {
+                {"optimizer_type", "rmsprop"},
+                {"params", {{"learning_rate", learning_rate}, {"rho", rho}, {"eps", epsilon}}}
+        };
     }
 
 private:
