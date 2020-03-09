@@ -3,13 +3,15 @@
 #include <armadillo>
 #include <vector>
 #include <glog/logging.h>
+#include <src/serializable.hpp>
+
 
 struct Gradients {
     arma::mat input_gradients;
     arma::mat layer_gradients;
 };
 
-class ILayer {
+class ILayer : public ISerializable {
 public:
     [[nodiscard]] virtual std::string ToString() const = 0;
 

@@ -3,6 +3,7 @@
 #include "activations.hpp"
 #include "../utils.hpp"
 
+
 class DenseLayer : public ILayer {
 public:
     DenseLayer(arma::uword n_rows, arma::uword n_cols) : weights_and_bias(arma::randu(n_rows + 1, n_cols) - 0.5) {
@@ -23,13 +24,13 @@ public:
         return "Dense[" + FormatDimensions(weights_and_bias) + " (including bias)]";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
+    [[nodiscard]] arma::mat Apply(const arma::mat& input) const override {
         return arma::affmul(weights_and_bias.t(), input.t()).t();
     }
 
     [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &inputs,
-            const arma::mat &output_gradients
+            const arma::mat& inputs,
+            const arma::mat& output_gradients
     ) const override {
         DLOG(INFO) << "Pull gradients for dense layer: "
                    << "inputs=[" + FormatDimensions(inputs) + "], "
@@ -43,11 +44,22 @@ public:
         };
     }
 
-    void ApplyGradients(const arma::mat &gradients) override {
+    void ApplyGradients(const arma::mat& gradients) override {
         DLOG(INFO) << "Apply gradients for dense layer: "
                    << "gradients[0]=[" + FormatDimensions((gradients)) + "], "
                    << "weights=[" + FormatDimensions((weights_and_bias)) + "]";
         weights_and_bias += gradients;
+    }
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "dense"},
+                {"params",     {
+                                       {"n_rows", weights_and_bias.n_rows - 1},
+                                       {"n_cols", weights_and_bias.n_cols}
+                               }
+                }
+        };
     }
 
 private:

@@ -5,6 +5,7 @@
 #include <glog/logging.h>
 #include "interface.h"
 
+
 class SigmoidActivationLayer : public ILayer {
 public:
     [[nodiscard]] std::string ToString() const override {
@@ -31,6 +32,12 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "sigmoid_activation"}
+        };
+    }
 };
 
 
@@ -66,6 +73,12 @@ class SoftmaxActivationLayer : public ILayer {
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "softmax_activation"}
+        };
+    }
 };
 
 
@@ -106,6 +119,12 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "relu_activation"}
+        };
+    }
 };
 
 
@@ -135,4 +154,10 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
+
+    json Serialize() const override {
+        return json{
+                {"layer_type", "tanh_activation"}
+        };
+    }
 };

@@ -300,6 +300,17 @@ TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
     MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, arma::mat{-0.5270462 , -0.1588382, -0.158838}, 1e-6);
 }
 
+TEST(SerializationTest, TestNNSerialization) {
+    auto model = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());;
+    model.AddLayer(std::make_unique<DenseLayer>(2, 3));
+    model.AddLayer(std::make_unique<SigmoidActivationLayer>());
+    model.AddLayer(std::make_unique<DenseLayer>(3, 1));
+    model.AddLayer(std::make_unique<ReLUActivationLayer>());
+
+    auto expected = R"({"layers":[{"layer_type":"dense","params":{"n_cols":3,"n_rows":2}},{"layer_type":"sigmoid_activation"},{"layer_type":"dense","params":{"n_cols":1,"n_rows":3}},{"layer_type":"relu_activation"}],"loss":["loss_type","mse"],"optimizer":{"optimizer_type":"optimizer","params":{"learning_rate":0.01}}})";
+    ASSERT_EQ(model.Serialize().dump(), expected);
+}
+
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     ::testing::InitGoogleTest(&argc, argv);
