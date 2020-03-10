@@ -16,7 +16,9 @@ RUN apt update && apt install -y \
 	autoconf \
     libopenblas-dev \
     liblapack-dev \
-    libgtest-dev
+    libgtest-dev\
+    python3\
+    python3-pip
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -25,7 +27,8 @@ WORKDIR /tmp/arma
 RUN wget http://sourceforge.net/projects/arma/files/$ARMA_VERSION.tar.xz
 RUN tar -xpJf $ARMA_VERSION.tar.xz
 WORKDIR /tmp/arma/$ARMA_VERSION
-ENV CXX="/usr/bin/clang++-8"
+ENV CXX="
+/usr/bin/clang++-8"
 ENV CC="/usr/bin/clang-8"
 RUN cmake .
 RUN make && make install
@@ -45,6 +48,9 @@ RUN cmake CMakeLists.txt
 RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
+
+# Pip install
+RUN pip3 install tensorflow keras numpy pandas sklearn
 
 # Csv:
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
