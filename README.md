@@ -16,6 +16,11 @@ docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework/data
 ```
 
+## Run benchmark
+```
+docker-compose run -v $(pwd):/nn_framework nn_framework benchmark
+```
+
 ## Run docker for local developement in JetBrains Clion:
 ```
 docker-compose up --build
