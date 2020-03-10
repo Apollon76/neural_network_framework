@@ -15,6 +15,9 @@ case "$1" in
 "sshd")
     /usr/sbin/sshd -D
     ;;
+"benchmark")
+    exec "/nn_framework/benchmark/run.sh"
+    ;;
 *)
     exec "$@"
     ;;

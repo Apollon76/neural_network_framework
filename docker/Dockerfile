@@ -16,7 +16,9 @@ RUN apt update && apt install -y \
 	autoconf \
     libopenblas-dev \
     liblapack-dev \
-    libgtest-dev
+    libgtest-dev\
+    python3\
+    python3-pip
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -80,6 +82,11 @@ RUN ldconfig
 
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
+RUN pip3 install tensorflow
+RUN pip3 install keras
+RUN pip3 install numpy
+RUN pip3 install pandas
+RUN pip3 install sklearn
 
 # entry point:
 COPY docker-entry-point.sh /
