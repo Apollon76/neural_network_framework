@@ -27,8 +27,7 @@ WORKDIR /tmp/arma
 RUN wget http://sourceforge.net/projects/arma/files/$ARMA_VERSION.tar.xz
 RUN tar -xpJf $ARMA_VERSION.tar.xz
 WORKDIR /tmp/arma/$ARMA_VERSION
-ENV CXX="
-/usr/bin/clang++-8"
+ENV CXX="/usr/bin/clang++-8"
 ENV CC="/usr/bin/clang-8"
 RUN cmake .
 RUN make && make install
