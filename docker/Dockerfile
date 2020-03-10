@@ -27,7 +27,8 @@ WORKDIR /tmp/arma
 RUN wget http://sourceforge.net/projects/arma/files/$ARMA_VERSION.tar.xz
 RUN tar -xpJf $ARMA_VERSION.tar.xz
 WORKDIR /tmp/arma/$ARMA_VERSION
-ENV CXX="/usr/bin/clang++-8"
+ENV CXX="
+/usr/bin/clang++-8"
 ENV CC="/usr/bin/clang-8"
 RUN cmake .
 RUN make && make install
@@ -47,6 +48,9 @@ RUN cmake CMakeLists.txt
 RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
+
+# Pip install
+RUN pip3 install tensorflow keras numpy pandas sklearn
 
 # Csv:
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
@@ -82,11 +86,6 @@ RUN ldconfig
 
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
-RUN pip3 install tensorflow
-RUN pip3 install keras
-RUN pip3 install numpy
-RUN pip3 install pandas
-RUN pip3 install sklearn
 
 # entry point:
 COPY docker-entry-point.sh /

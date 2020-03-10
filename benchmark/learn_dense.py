@@ -34,6 +34,6 @@ model.add(Dense(100, activation='sigmoid'))
 model.add(Dense(10, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='RMSProp', metrics=['accuracy'])
 
-model.fit(X_train, y_train, epochs=4, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=40, validation_data=(X_test, y_test))
 
 print('Result on test data: ', model.evaluate(X_test, y=y_test)[-1])
