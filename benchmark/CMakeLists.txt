@@ -6,6 +6,7 @@ include_directories(${PROTOBUF_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER protos/layers.proto)
+add_library(proto_benchmark ${PROTO_HEADER} ${PROTO_SRC})
 
 add_executable(benchmark dense_benchmark.cpp)
-target_link_libraries(benchmark neural_network_framework ${PROTOBUF_LIBRARY} proto)
+target_link_libraries(benchmark neural_network_framework ${PROTOBUF_LIBRARY} proto_benchmark)
