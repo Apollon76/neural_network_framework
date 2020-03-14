@@ -5,7 +5,7 @@
 #include <cxxopts.hpp>
 #include <src/io/csv.hpp>
 #include <src/data_processing/data_utils.hpp>
-#include <src/scoring/test_scoring.hpp>
+#include <src/scoring/scoring.hpp>
 #include "neural_network.hpp"
 #include "src/layers/activations.hpp"
 #include "optimizer.hpp"
