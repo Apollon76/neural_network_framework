@@ -3,6 +3,8 @@
 #include <armadillo>
 #include <vector>
 #include <chrono>
+#include <glog/logging.h>
+
 
 #define UNUSED(x)   \
 do {                \

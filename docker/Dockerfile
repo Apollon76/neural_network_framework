@@ -80,7 +80,7 @@ WORKDIR /tmp/protobuf
 RUN git submodule update --init --recursive
 RUN ./autogen.sh
 RUN ./configure
-RUN make && make check && make install
+RUN make -j$(nproc) && make check && make install
 RUN ldconfig
 
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment

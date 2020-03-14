@@ -5,6 +5,7 @@
 #include "src/optimizer.hpp"
 #include "src/utils.hpp"
 
+
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
 }
@@ -331,10 +332,4 @@ TEST(SerializationTest, TestNNSerialization) {
 
     auto expected = R"({"layers":[{"layer_type":"dense","params":{"n_cols":3,"n_rows":2}},{"layer_type":"sigmoid_activation"},{"layer_type":"dense","params":{"n_cols":1,"n_rows":3}},{"layer_type":"relu_activation"}],"loss":["loss_type","mse"],"optimizer":{"optimizer_type":"optimizer","params":{"learning_rate":0.01}}})";
     ASSERT_EQ(model.Serialize().dump(), expected);
-}
-
-int main(int argc, char** argv) {
-    google::InitGoogleLogging(argv[0]);
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
