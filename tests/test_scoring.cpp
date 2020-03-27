@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "src/scoring/test_scoring.hpp"
+#include "src/scoring/scoring.hpp"
 
 
 TEST(ScoringTest, TestMSEScore) {
