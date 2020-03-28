@@ -48,6 +48,8 @@ arma::field<arma::Mat<T>> createValuesContainer(TensorDimensions d) {
         return arma::field<arma::Mat<T>>(1, d[0], d[1]);
     } else if (d.size() == 5) {
         return arma::field<arma::Mat<T>>(d[0], d[1], d[2]);
+    } else {
+        throw std::logic_error("too many dimensions");
     }
 }
 
@@ -129,24 +131,24 @@ public:
         return TensorConstView<T>(*this, {}).At(x, y);
     }
 
-    TensorView<T> &View() {
+    TensorView<T> View() {
         return TensorView<T>(*this, {});
     }
 
-    TensorConstView<T> &ConstView() {
+    TensorConstView<T> ConstView() const {
         return TensorConstView<T>(*this, {});
     }
 
     T &at(int x, int y) {
-        return View().At(x, y);
+        return TensorView<T>(*this, {}).At(x, y);
     }
 
     [[nodiscard]] arma::Mat<T> &Values() {
-        return View().Matrix();
+        return TensorView<T>(*this, {}).Matrix();
     }
 
     [[nodiscard]] const arma::Mat<T> &Values() const {
-        return ConstView().Matrix();
+        return TensorConstView<T>(*this, {}).Matrix();
     }
 
     [[nodiscard]] int Rank() const {
@@ -230,7 +232,10 @@ TensorConstView<T> TensorConstView<T>::View(int id) const {
 template<typename T>
 TensorConstView<T> TensorConstView<T>::View(int x, int y) const {
     ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = indices;
+    auto new_indices = std::vector<int>();
+    for (int i = 3 - fixed; i < 3; i++) {
+        new_indices.push_back(indices[i]);
+    }
     new_indices.push_back(x);
     new_indices.push_back(y);
     return TensorConstView<T>(ref, new_indices);
@@ -267,7 +272,10 @@ TensorView<T> TensorView<T>::View(int id) const {
 template<typename T>
 TensorView<T> TensorView<T>::View(int x, int y) const {
     ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = indices;
+    auto new_indices = std::vector<int>();
+    for (int i = 3 - fixed; i < 3; i++) {
+        new_indices.push_back(indices[i]);
+    }
     new_indices.push_back(x);
     new_indices.push_back(y);
     return TensorView<T>(ref, new_indices);

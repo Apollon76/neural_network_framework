@@ -11,7 +11,8 @@ enum ConvolutionPadding {
 template<typename T>
 class Convolution2dLayer : public ILayer<T> {
 public:
-    Convolution2dLayer(int input_channels, int filters, int kernel_height, int kernel_width, ConvolutionPadding _padding)
+    Convolution2dLayer(int input_channels, int filters, int kernel_height, int kernel_width,
+                       ConvolutionPadding _padding)
             : weights(Tensor<T>::filled(
             {
                     filters,
@@ -24,7 +25,7 @@ public:
 
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
-        stream << std::endl << weights;
+        stream << std::endl << weights.ToString();
         return GetName() + stream.str();
     }
 
@@ -51,20 +52,20 @@ public:
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
     ) const override {
-        auto weightsGradients = Tensor<T>(weights.D, arma::fill::zeros);
-        auto inputGradients = Tensor<T>(input.D, arma::fill::zeros);
+        auto weightsGradients = Tensor<T>::filled(weights.D, arma::fill::zeros);
+        auto inputGradients = Tensor<T>::filled(input.D, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                    auto inputImage = input.View().View(batch, input_channel).Matrix();
-                    auto outputGradients = output_gradients.View().View(batch, filter).Matrix();
+                    auto inputImage = input.ConstView().View(batch, input_channel).Matrix();
+                    auto outputGradients = output_gradients.ConstView().View(batch, filter).Matrix();
                     for (int w = 0; w < weights.D[2]; w++) {
                         for (int h = 0; h < weights.D[3]; h++) {
-                            auto grad = arma::sum(
-                                    inputImage.submat(weights.D[2], weights.D[3], inputImage.D[2] - 1,
-                                                      inputImage.D[3] - 1) %
-                                    outputGradients.submat(outputGradients.D[2] - weights.D[2],
-                                                           outputGradients.D[3] - weights.D[3]));
+                            auto grad = arma::accu(
+                                    inputImage.submat(weights.D[2], weights.D[3], inputImage.n_rows - 1,
+                                                      inputImage.n_cols - 1) %
+                                    outputGradients.submat(0, outputGradients.n_rows - weights.D[2],
+                                                           0, outputGradients.n_cols - weights.D[3]));
                             weightsGradients.View().View(filter, input_channel).At(w, h) += grad / weights.D[1];
                         }
                     }
@@ -80,8 +81,9 @@ public:
     void ApplyGradients(const Tensor<T> &gradients) override {
         for (int filter = 0; filter < weights.D[0]; filter++) {
             for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                weights.View().View(filter, input_channel).Matrix() += gradients.View().View(filter,
-                                                                                             input_channel).Matrix();
+                weights.View().View(filter, input_channel).Matrix() += gradients
+                        .ConstView()
+                        .View(filter, input_channel).Matrix();
             }
         }
     }

@@ -324,105 +324,16 @@ TEST(AdamOptimizerTest, TestAdamGradientStep) {
                               Tensor<double>::init({-15.81138814, -9.133237456, -9.133258618}), 1e-6);
 }
 
-TEST(SerializationTest, TestNNSerialization) {
-    auto model = NeuralNetwork<double>(
-            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
-    );;
-    model.AddLayer(std::make_unique<DenseLayer<double>>(2, 3));
-    model.AddLayer(std::make_unique<SigmoidActivationLayer<double>>());
-    model.AddLayer(std::make_unique<DenseLayer<double>>(3, 1));
-    model.AddLayer(std::make_unique<ReLUActivationLayer<double>>());
-
-    auto expected = R"({"layers":[{"layer_type":"dense","params":{"n_cols":3,"n_rows":2}},{"layer_type":"sigmoid_activation"},{"layer_type":"dense","params":{"n_cols":1,"n_rows":3}},{"layer_type":"relu_activation"}],"loss":["loss_type","mse"],"optimizer":{"optimizer_type":"optimizer","params":{"learning_rate":0.01}}})";
-    ASSERT_EQ(model.Serialize().dump(), expected);
-}
-
-
 TEST(ConsolutionLayerTest, TestPullGradientsBackward) {
-    auto layer = DenseLayer<double>(3, 2);
-    auto i = Tensor<double>::init(
-            {
-                    {1, 2, 3},
-                    {4, 5, 6}
-            }
-    );
-    auto og = Tensor<double>::init(
-            {
-                    {7, 8},
-                    {9, 10}
-            }
-    );
-    auto gradients = layer.PullGradientsBackward(i, og);
-    auto expected_layer_gradients = Tensor<double>::init(
-            {
-                    // Weights
-                    {
-                            og.at(0, 0) * i.at(0, 0) + og.at(1, 0) * i.at(1, 0),
-                            og.at(0, 1) * i.at(0, 0) + og.at(1, 1) * i.at(1, 0)
-                    },
-                    {
-                            og.at(0, 0) * i.at(0, 1) + og.at(1, 0) * i.at(1, 1),
-                            og.at(0, 1) * i.at(0, 1) + og.at(1, 1) * i.at(1, 1)
-                    },
-                    {
-                            og.at(0, 0) * i.at(0, 2) + og.at(1, 0) * i.at(1, 2),
-                            og.at(0, 1) * i.at(0, 2) + og.at(1, 1) * i.at(1, 2)
-                    },
-                    // Biases
-                    {
-                            og.at(0, 0) + og.at(1, 0),
-                            og.at(0, 1) + og.at(1, 1),
-                    }
-            }
-    );
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, expected_layer_gradients);
+    auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
 }
 
 TEST(ConsolutionLayerTest, TestApplyGradient) {
-    auto layer = DenseLayer<double>(2, 2);
-    auto w = layer.GetWeightsAndBias();
-    auto g = Tensor<double>::init(
-            {
-                    {1, 2},
-                    {3, 4},
-                    {5, 6}
-            }
-    );
-    auto expected = Tensor<double>::init(
-            {
-                    {w.at(0, 0) + g.at(0, 0), w.at(0, 1) + g.at(0, 1)},
-                    {w.at(1, 0) + g.at(1, 0), w.at(1, 1) + g.at(1, 1)},
-                    {w.at(2, 0) + g.at(2, 0), w.at(2, 1) + g.at(2, 1)}
-            }
-    );
-    layer.ApplyGradients(g);
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), expected);
-
+    auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
 }
 
 TEST(ConsolutionLayerTest, TestApply) {
     auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
-    auto w = layer.GetWeightsAndBias();
-    auto i = Tensor<double>::init(
-            {
-                    {1, 2, 3},
-                    {4, 5, 6}
-            }
-    );
-    auto expected = Tensor<double>::init(
-            {
-                    {
-                            i.at(0, 0) * w.at(0, 0) + i.at(0, 1) * w.at(1, 0) + i.at(0, 2) * w.at(2, 0) + w.at(3, 0),
-                            i.at(0, 0) * w.at(0, 1) + i.at(0, 1) * w.at(1, 1) + i.at(0, 2) * w.at(2, 1) + w.at(3, 1)
-                    },
-                    {
-                            i.at(1, 0) * w.at(0, 0) + i.at(1, 1) * w.at(1, 0) + i.at(1, 2) * w.at(2, 0) + w.at(3, 0),
-                            i.at(1, 0) * w.at(0, 1) + i.at(1, 1) * w.at(1, 1) + i.at(1, 2) * w.at(2, 1) + w.at(3, 1)
-                    },
-            }
-    );
-    auto actual = layer.Apply(i);
-    MATRIX_SHOULD_BE_EQUAL_TO(actual, expected);
 }
 
 TEST(ConsolutionLayerTest, TestSerialization) {
