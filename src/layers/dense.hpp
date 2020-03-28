@@ -83,7 +83,7 @@ public:
     }
 
     template<class Archive>
-    void load(Archive & archive) {
+    void load(Archive& archive) {
         arma::uword rows, cols;
         archive(rows, cols);
         weights_and_bias = DenseLayer(rows, cols).weights_and_bias;
