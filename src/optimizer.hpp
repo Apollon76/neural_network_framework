@@ -1,10 +1,12 @@
 #pragma once
 
 #include <armadillo>
+#include <cereal/types/polymorphic.hpp>
 #include "utils.hpp"
 #include "layers/interface.h"
 
-class IOptimizer : public ISerializable {
+
+class IOptimizer {
 public:
     [[nodiscard]] virtual arma::mat GetGradientStep(const arma::mat& gradients, const ILayer* layer) = 0;
 
@@ -13,6 +15,7 @@ public:
 
 class Optimizer : public IOptimizer {
 public:
+    Optimizer() {}
     explicit Optimizer(double _learning_rate) : learning_rate(_learning_rate) {}
 
     [[nodiscard]] arma::mat GetGradientStep(const arma::mat& gradients, const ILayer* layer) override {
@@ -20,19 +23,21 @@ public:
         return -gradients * learning_rate;
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {
-                {"optimizer_type", "optimizer"},
-                {"params", {{"learning_rate", learning_rate}}}
-        };
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(learning_rate);
     }
 
 private:
     double learning_rate;
 };
 
+CEREAL_REGISTER_TYPE(Optimizer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IOptimizer, Optimizer)
+
 class MomentumOptimizer : public IOptimizer {
 public:
+    MomentumOptimizer() {}
     explicit MomentumOptimizer(double _learning_rate, double _momentum)
             : learning_rate(_learning_rate), momentum(_momentum) {
     }
@@ -46,11 +51,9 @@ public:
         return previous_values[layer] = momentum * previous_gradient - learning_rate * gradients;
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {
-                {"optimizer_type", "momentum"},
-                {"params", {{"learning_rate", learning_rate}, {"momentum", momentum}}}
-        };
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(learning_rate, momentum);
     }
 
 private:
@@ -59,6 +62,9 @@ private:
 
     std::unordered_map<const ILayer*, arma::mat> previous_values;
 };
+
+CEREAL_REGISTER_TYPE(MomentumOptimizer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IOptimizer, MomentumOptimizer)
 
 class RMSPropOptimizer : public IOptimizer {
 public:
@@ -79,11 +85,9 @@ public:
         return -learning_rate * (gradients / arma::sqrt(currentMean + epsilon));
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {
-                {"optimizer_type", "rmsprop"},
-                {"params", {{"learning_rate", learning_rate}, {"rho", rho}, {"eps", epsilon}}}
-        };
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(learning_rate, rho, epsilon);
     }
 
 private:
@@ -93,6 +97,9 @@ private:
 
     std::unordered_map<const ILayer*, arma::mat> previous_mean;
 };
+
+CEREAL_REGISTER_TYPE(RMSPropOptimizer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IOptimizer, RMSPropOptimizer)
 
 class AdamOptimizer : public IOptimizer {
     using mapping_type = std::unordered_map<const ILayer *, arma::mat>;
@@ -114,11 +121,9 @@ public:
         return -learning_rate * gradients / arma::sqrt(cur_square_avg + epsilon);
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {
-                {"optimizer_type", "adam"},
-                {"params",         {{"learning_rate", learning_rate}, {"beta_1", beta_1}, {"beta_2", beta_2}, {"eps", epsilon}}}
-        };
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(learning_rate, beta_1, beta_2, epsilon);
     }
 
 private:
@@ -132,7 +137,6 @@ private:
         return previous;
     }
 
-private:
     double learning_rate;
     double beta_1;
     double beta_2;
@@ -140,3 +144,6 @@ private:
     mapping_type average_of_gradients;
     mapping_type average_of_squares_of_gradients;
 };
+
+CEREAL_REGISTER_TYPE(AdamOptimizer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IOptimizer, AdamOptimizer)

@@ -5,10 +5,13 @@
 #include "loss.hpp"
 #include "layers/interface.h"
 #include <memory>
+#include <cereal/types/vector.hpp>
 
 
-class NeuralNetwork : public ISerializable {
+class NeuralNetwork {
 public:
+    NeuralNetwork() = default;
+
     explicit NeuralNetwork(std::unique_ptr<IOptimizer> _optimizer, std::unique_ptr<ILoss> _loss)
             : layers(), optimizer(std::move(_optimizer)), loss(std::move(_loss)) {
 
@@ -19,23 +22,23 @@ public:
         return *this;
     }
 
-    [[nodiscard]] ILayer *GetLayer(int layer_id) const {
+    [[nodiscard]] ILayer* GetLayer(int layer_id) const {
         return layers[layer_id].get();
     }
 
     [[nodiscard]] std::string ToString() const {
         std::stringstream output;
         output << "Layers:\n";
-        for (auto &layer : layers) {
+        for (auto& layer : layers) {
             output << layer->ToString() << std::endl;
         }
         return output.str();
     }
 
-    double Fit(const arma::mat &input, const arma::mat &output) {
+    double Fit(const arma::mat& input, const arma::mat& output) {
         DLOG(INFO) << "Fitting neural network...";
         std::vector<arma::mat> inter_outputs = {input};
-        for (auto &&layer : layers) {
+        for (auto&& layer : layers) {
             DLOG(INFO) << "Fit forward layer: " << layer->GetName();
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
@@ -58,28 +61,20 @@ public:
         return loss->GetLoss(inter_outputs.back(), output);
     }
 
-    [[nodiscard]] arma::mat Predict(const arma::mat &input) const {
+    [[nodiscard]] arma::mat Predict(const arma::mat& input) const {
         DLOG(INFO) << "Predict with neural network...";
         std::vector<arma::mat> inter_outputs = {input};
-        for (auto &&layer : layers) {
+        for (auto&& layer : layers) {
             DLOG(INFO) << "Fit forward layer: " << layer->GetName();
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
         return inter_outputs.back();
     }
 
-    [[nodiscard]] json Serialize() const override {
-        json serialized_layers;
-        for (const auto& layer : layers) {
-            serialized_layers.push_back(layer->Serialize());
-        }
-        return {
-            {"optimizer", optimizer->Serialize()},
-            {"loss", loss->Serialize()},
-            {"layers", serialized_layers}
-        };
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(layers, optimizer, loss);
     }
-
 
 private:
     std::vector<std::unique_ptr<ILayer>> layers;

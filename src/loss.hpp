@@ -1,9 +1,10 @@
 #pragma once
 
 #include <armadillo>
+#include <cereal/types/polymorphic.hpp>
 
 
-class ILoss : public ISerializable {
+class ILoss {
 public:
     [[nodiscard]] virtual double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const = 0;
 
@@ -22,10 +23,12 @@ public:
         return 2 * (inputs - outputs) / inputs.n_rows;
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {"loss_type", "mse"};
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+
+CEREAL_REGISTER_TYPE(MSELoss)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILoss, MSELoss)
 
 class CategoricalCrossEntropyLoss : public ILoss {
  public:
@@ -37,7 +40,9 @@ class CategoricalCrossEntropyLoss : public ILoss {
         return -outputs / inputs;
     }
 
-    [[nodiscard]] json Serialize() const override {
-        return {"loss_type", "categorical_cross_entropy"};
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+
+CEREAL_REGISTER_TYPE(CategoricalCrossEntropyLoss)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILoss, CategoricalCrossEntropyLoss)

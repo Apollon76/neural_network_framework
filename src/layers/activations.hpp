@@ -3,6 +3,8 @@
 #include <armadillo>
 #include <vector>
 #include <glog/logging.h>
+#include <cereal/types/polymorphic.hpp>
+
 #include "interface.h"
 
 class SigmoidActivationLayer : public ILayer {
@@ -32,12 +34,11 @@ public:
 
     void ApplyGradients(const arma::mat &) override {}
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "sigmoid_activation"}
-        };
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+CEREAL_REGISTER_TYPE(SigmoidActivationLayer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer, SigmoidActivationLayer)
 
 
 class SoftmaxActivationLayer : public ILayer {
@@ -73,12 +74,11 @@ class SoftmaxActivationLayer : public ILayer {
 
     void ApplyGradients(const arma::mat &) override {}
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "softmax_activation"}
-        };
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+CEREAL_REGISTER_TYPE(SoftmaxActivationLayer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer, SoftmaxActivationLayer)
 
 
 class ReLUActivationLayer : public ILayer {
@@ -119,12 +119,11 @@ public:
 
     void ApplyGradients(const arma::mat &) override {}
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "relu_activation"}
-        };
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+CEREAL_REGISTER_TYPE(ReLUActivationLayer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer, ReLUActivationLayer)
 
 
 class TanhActivationLayer : public ILayer {
@@ -154,9 +153,8 @@ public:
 
     void ApplyGradients(const arma::mat &) override {}
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "tanh_activation"}
-        };
-    }
+    template<class Archive>
+    void serialize(Archive&) {}
 };
+CEREAL_REGISTER_TYPE(TanhActivationLayer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer, TanhActivationLayer)

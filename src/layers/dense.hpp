@@ -3,10 +3,12 @@
 #include "activations.hpp"
 #include "../utils.hpp"
 #include <layers.pb.h>
+#include <cereal/types/polymorphic.hpp>
 
 
 class DenseLayer : public ILayer {
 public:
+    DenseLayer() = default;
     DenseLayer(arma::uword n_rows, arma::uword n_cols) : weights_and_bias(arma::randu(n_rows + 1, n_cols) - 0.5) {
     }
 
@@ -52,17 +54,6 @@ public:
         weights_and_bias += gradients;
     }
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "dense"},
-                {"params",     {
-                                       {"n_rows", weights_and_bias.n_rows - 1},
-                                       {"n_cols", weights_and_bias.n_cols}
-                               }
-                }
-        };
-    }
-
     void SaveWeights(std::ostream *out) {
         DenseWeights matrix;
         matrix.set_n_rows(weights_and_bias.n_rows);
@@ -86,6 +77,21 @@ public:
         }
     }
 
+    template<class Archive>
+    void save(Archive& ar) const {
+        ar(weights_and_bias.n_rows - 1, weights_and_bias.n_cols);
+    }
+
+    template<class Archive>
+    void load(Archive& archive) {
+        arma::uword rows, cols;
+        archive(rows, cols);
+        weights_and_bias = DenseLayer(rows, cols).weights_and_bias;
+    }
+
 private:
     arma::mat weights_and_bias;
 };
+
+CEREAL_REGISTER_TYPE(DenseLayer)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer, DenseLayer)
