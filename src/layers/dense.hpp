@@ -79,7 +79,6 @@ public:
 
     template<class Archive>
     void save(Archive& ar) const {
-
         ar(weights_and_bias.n_rows - 1, weights_and_bias.n_cols);
     }
 
