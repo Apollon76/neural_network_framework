@@ -5,10 +5,13 @@
 #include "loss.hpp"
 #include "layers/interface.h"
 #include <memory>
+#include <cereal/types/vector.hpp>
 
 
 class NeuralNetwork {
 public:
+    NeuralNetwork() = default;
+
     explicit NeuralNetwork(std::unique_ptr<IOptimizer> _optimizer, std::unique_ptr<ILoss> _loss)
             : layers(), optimizer(std::move(_optimizer)), loss(std::move(_loss)) {
 
@@ -66,6 +69,11 @@ public:
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
         return inter_outputs.back();
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(layers, optimizer, loss);
     }
 
 private:

@@ -24,9 +24,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
-        ar();
-    }
+    void serialize(Archive&) {}
 };
 
 CEREAL_REGISTER_TYPE(MSELoss)
@@ -43,9 +41,7 @@ class CategoricalCrossEntropyLoss : public ILoss {
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
-        ar();
-    }
+    void serialize(Archive&) {}
 };
 
 CEREAL_REGISTER_TYPE(CategoricalCrossEntropyLoss)

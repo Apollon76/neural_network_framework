@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cereal/types/vector.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
 
@@ -37,7 +38,7 @@ public:
         std::cout << "second" << std::endl;
     }
 
-    float y;
+    std::vector<float> y;
 
     template<class Archive>
     void serialize(Archive& ar) { ar(y); }
