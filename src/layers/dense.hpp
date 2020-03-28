@@ -19,7 +19,7 @@ public:
 
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
-        stream << std::endl << weights_and_bias;
+        stream << std::endl << weights_and_bias.ToString();
         return GetName() + stream.str();
     }
 

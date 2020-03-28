@@ -14,7 +14,8 @@ const double eps = 1e-9;
 template<typename T>
 void MATRIX_SHOULD_BE_EQUAL_TO(const Tensor<T> &actual, const Tensor<T> &expected, double tolerance = eps) {
     std::stringstream message;
-    message << "Expected matrix: " << std::endl << expected << "Bug given matrix: " << std::endl << actual;
+    message << "Expected matrix: " << std::endl << expected.ToString()
+            << "Bug given matrix: " << std::endl << actual.ToString();
     ASSERT_TRUE(arma::approx_equal(actual.Values(), expected.Values(), "both", tolerance, tolerance)) << message.str();
 }
 
