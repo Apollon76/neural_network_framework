@@ -12,8 +12,6 @@
 #include "utils.hpp"
 #include "layers/dense.hpp"
 #include "os_utils.hpp"
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
 
 
 void GenerateInputs(arma::mat& inputs, arma::mat& outputs) {
