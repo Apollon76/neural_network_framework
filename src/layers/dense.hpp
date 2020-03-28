@@ -63,6 +63,12 @@ public:
         };
     }
 
+    void FromJson(json data) override {
+        auto params = data["params"];
+        auto new_layer = DenseLayer(params["n_rows"], params["n_cols"]);
+        this->weights_and_bias = new_layer.weights_and_bias;
+    }
+
     void SaveWeights(std::ostream *out) {
         DenseWeights matrix;
         matrix.set_n_rows(weights_and_bias.n_rows);

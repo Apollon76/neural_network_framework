@@ -121,6 +121,14 @@ public:
         };
     }
 
+    void FromJson(json data) override {
+        auto params = data["params"];
+        learning_rate = params["learning_rate"];
+        beta_1 = params["beta_1"];
+        beta_2 = params["beta_2"];
+        epsilon = params["eps"];
+    }
+
 private:
     arma::mat GetOrCreatePrevious(const ILayer *layer, mapping_type &mapping, arma::SizeMat size) {
         auto it = mapping.find(layer);

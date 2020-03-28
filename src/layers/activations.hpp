@@ -37,6 +37,8 @@ public:
                 {"layer_type", "sigmoid_activation"}
         };
     }
+
+    void FromJson(json data) override {}
 };
 
 
@@ -78,6 +80,8 @@ class SoftmaxActivationLayer : public ILayer {
                 {"layer_type", "softmax_activation"}
         };
     }
+
+    void FromJson(json data) override {}
 };
 
 
@@ -124,6 +128,8 @@ public:
                 {"layer_type", "relu_activation"}
         };
     }
+
+    void FromJson(json data) override {}
 };
 
 
@@ -159,4 +165,6 @@ public:
                 {"layer_type", "tanh_activation"}
         };
     }
+
+    void FromJson(json data) override {}
 };
