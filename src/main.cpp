@@ -111,6 +111,25 @@ void DigitRecognizer(const std::string& data_path, const std::string& output, st
     std::cout << "Predictions written to " << predictions_path << std::endl;
 }
 
+void DigitRecognizerValidation(const std::string& data_path, std::unique_ptr<IOptimizer> optimizer) {
+    auto [x, y] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv", true);
+
+    nn_framework::data_processing::TrainTestSplitter<double> splitter(42);
+    auto [x_train, y_train, x_test, y_test] = splitter.Split(x, y, 0.7);
+
+    std::cout << "X_train: " << FormatDimensions(x_train) << " y_train: " << FormatDimensions(y_train) << std::endl;
+    std::cout << "X_test: " << FormatDimensions(x_test) << " y_test: " << FormatDimensions(y_test) << std::endl;
+    LOG(INFO) << "Start digit-recognizer neural network...";
+
+    auto neural_network = BuildMnistNN(std::move(optimizer));
+    FitNN(&neural_network, 40, x_train, y_train, x_test, y_test);
+
+    auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+    auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_test), y_test);
+    std::cout << "Final train score: " << train_score << std::endl;
+    std::cout << "Final validation score: " << test_score << std::endl;
+}
+
 void Mnist(const std::string& data_path) {
     auto [x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv", false);
     auto [x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv", false);
@@ -176,8 +195,9 @@ int main(int argc, char** argv) {
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data"].as<std::string>();
 
-    MnistPng(data_path + "/data", false);
-    Mnist(data_path + "/data");
+    //MnistPng(data_path + "/data", false);
+    //Mnist(data_path + "/data");
+    DigitRecognizerValidation(data_path + "/data", std::make_unique<RMSPropOptimizer>(0.01));
     return 0;
 
     // Mnist(data_path);

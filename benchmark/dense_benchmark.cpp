@@ -63,8 +63,8 @@ int main(int argc, char **argv) {
 
     cout << "loading mnist" << endl;
 
-    auto [x_train, y_train] = LoadMnist(data_path + "/train.csv");
-    auto [x_test, y_test] = LoadMnist(data_path + "/test.csv");
+    auto [x_train, y_train] = LoadMnist(data_path + "/train.csv", true);
+    auto [x_test, y_test] = LoadMnist(data_path + "/test.csv", true);
 
     cout << "X_train: " << FormatDimensions(x_train) << " y_train: " << FormatDimensions(y_train) << endl;
     cout << "X_test: " << FormatDimensions(x_train) << " y_test: " << FormatDimensions(y_train) << endl;

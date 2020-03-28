@@ -36,4 +36,55 @@ namespace nn_framework::data_processing {
 
         constexpr static double eps = 1e-10;
     };
+
+    template <class T>
+    class TrainTestSplitter {
+    public:
+        explicit TrainTestSplitter(int random_seed) :
+            random_seed(random_seed) {
+        }
+
+        TrainTestSplitter() :
+            random_seed(std::random_device()()) {
+        }
+
+        std::tuple<arma::Mat<T>, arma::Mat<T>, arma::Mat<T>, arma::Mat<T>> Split(const arma::Mat<T>& x, const arma::Mat<T>& y, double train_portion) {
+            return Split(x, y, static_cast<size_t>(train_portion * x.n_rows));
+        }
+
+        std::tuple<arma::Mat<T>, arma::Mat<T>, arma::Mat<T>, arma::Mat<T>> Split(const arma::Mat<T>& x, const arma::Mat<T>& y, size_t train_size) {
+            ensure(x.n_rows == y.n_rows);
+            ensure(0 < train_size);
+            ensure(train_size <= x.n_rows);
+
+            std::vector<int> inds(x.n_rows);
+            for (size_t i = 0; i < inds.size(); i++) {
+                inds[i] = i;
+            }
+
+            std::mt19937 generator(random_seed);
+            std::shuffle(inds.begin(), inds.end(), generator);
+
+            int test_size = x.n_rows - train_size;
+            arma::Mat<T> x_train(train_size, x.n_cols);
+            arma::Mat<T> y_train(train_size, y.n_cols);
+            arma::Mat<T> x_test(test_size, x.n_cols);
+            arma::Mat<T> y_test(test_size, y.n_cols);
+
+            for (size_t i = 0; i < x.n_rows; i++) {
+                if (i < train_size) {
+                    x_train.row(i) = x.row(inds[i]);
+                    y_train.row(i) = y.row(inds[i]);
+                } else {
+                    x_test.row(i - train_size) = x.row(inds[i]);
+                    y_test.row(i - train_size) = y.row(inds[i]);
+                }
+            }
+
+            return {x_train, y_train, x_test, y_test};
+        }
+
+    private:
+        const int random_seed;
+    };
 }
