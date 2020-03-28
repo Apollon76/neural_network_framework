@@ -5,22 +5,20 @@
 #include "interface.h"
 
 enum ConvolutionPadding {
-    Valid,
     Same,
 };
 
 template<typename T>
-class Convolution2d : public ILayer<T> {
+class Convolution2dLayer : public ILayer<T> {
 public:
-    Convolution2d(int input_channels, int filters, int kernel_width, int kernel_height, ConvolutionPadding _padding)
+    Convolution2dLayer(int input_channels, int filters, int kernel_height, int kernel_width, ConvolutionPadding _padding)
             : weights(Tensor<T>::filled(
             {
                     filters,
                     input_channels,
-                    kernel_width,
-                    kernel_height
+                    kernel_height,
+                    kernel_width
             }, arma::fill::randu)),
-              biases(Tensor<T>::filled({input_channels}, arma::fill::randu)),
               padding(_padding) {
     }
 
@@ -41,7 +39,7 @@ public:
                 auto layer = arma::Mat<T>(input.D[2], input.D[3], arma::fill::zeros);
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
                     // todo (sivukhin): use ConvolutionPadding here
-                    layer += arma::conv2(input.Values(), weights.Values(), "same") + biases.at(0, input_channel);
+                    layer += arma::conv2(input.Values(), weights.Values(), "same");
                 }
                 result.View().View(batch, filter).Matrix() = layer / weights.D[1];
             }
@@ -53,8 +51,8 @@ public:
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
     ) const override {
-//        auto biasGradients = arma::sum(output_gradients.Values(), 0) / weights.D[1];
         auto weightsGradients = Tensor<T>(weights.D, arma::fill::zeros);
+        auto inputGradients = Tensor<T>(input.D, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
@@ -62,20 +60,33 @@ public:
                     auto outputGradients = output_gradients.View().View(batch, filter).Matrix();
                     for (int w = 0; w < weights.D[2]; w++) {
                         for (int h = 0; h < weights.D[3]; h++) {
-                            weightsGradients.View()
+                            auto grad = arma::sum(
+                                    inputImage.submat(weights.D[2], weights.D[3], inputImage.D[2] - 1,
+                                                      inputImage.D[3] - 1) %
+                                    outputGradients.submat(outputGradients.D[2] - weights.D[2],
+                                                           outputGradients.D[3] - weights.D[3]));
+                            weightsGradients.View().View(filter, input_channel).At(w, h) += grad / weights.D[1];
                         }
                     }
                 }
             }
         }
+        return Gradients<T>{
+                inputGradients,
+                weightsGradients
+        };
     }
 
     void ApplyGradients(const Tensor<T> &gradients) override {
-
+        for (int filter = 0; filter < weights.D[0]; filter++) {
+            for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
+                weights.View().View(filter, input_channel).Matrix() += gradients.View().View(filter,
+                                                                                             input_channel).Matrix();
+            }
+        }
     }
 
 private:
     Tensor<T> weights;
-    Tensor<T> biases;
     ConvolutionPadding padding;
 };
