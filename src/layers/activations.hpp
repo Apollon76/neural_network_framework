@@ -31,14 +31,6 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
-
-    json Serialize() const override {
-        return json{
-                {"layer_type", "sigmoid_activation"}
-        };
-    }
-
-    void FromJson(json data) override {}
 };
 
 
@@ -74,14 +66,6 @@ class SoftmaxActivationLayer : public ILayer {
     }
 
     void ApplyGradients(const arma::mat &) override {}
-
-    json Serialize() const override {
-        return json{
-                {"layer_type", "softmax_activation"}
-        };
-    }
-
-    void FromJson(json data) override {}
 };
 
 
@@ -122,14 +106,6 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
-
-    json Serialize() const override {
-        return json{
-                {"layer_type", "relu_activation"}
-        };
-    }
-
-    void FromJson(json data) override {}
 };
 
 
@@ -159,12 +135,4 @@ public:
     }
 
     void ApplyGradients(const arma::mat &) override {}
-
-    json Serialize() const override {
-        return json{
-                {"layer_type", "tanh_activation"}
-        };
-    }
-
-    void FromJson(json data) override {}
 };

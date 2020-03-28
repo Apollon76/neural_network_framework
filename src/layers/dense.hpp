@@ -52,23 +52,6 @@ public:
         weights_and_bias += gradients;
     }
 
-    json Serialize() const override {
-        return json{
-                {"layer_type", "dense"},
-                {"params",     {
-                                       {"n_rows", weights_and_bias.n_rows - 1},
-                                       {"n_cols", weights_and_bias.n_cols}
-                               }
-                }
-        };
-    }
-
-    void FromJson(json data) override {
-        auto params = data["params"];
-        auto new_layer = DenseLayer(params["n_rows"], params["n_cols"]);
-        this->weights_and_bias = new_layer.weights_and_bias;
-    }
-
     void SaveWeights(std::ostream *out) {
         DenseWeights matrix;
         matrix.set_n_rows(weights_and_bias.n_rows);
