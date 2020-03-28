@@ -40,6 +40,11 @@ std::string FormatDimensions(const arma::Mat<T> &mat) {
     return std::to_string(mat.n_rows) + "x" + std::to_string(mat.n_cols);
 }
 
+template<typename T>
+std::string FormatDimensions(const arma::Cube<T> &cube) {
+    return std::to_string(cube.n_rows) + "x" + std::to_string(cube.n_cols) + "x" + std::to_string(cube.n_slices);
+}
+
 class Timer {
 public:
     explicit Timer(std::string action_description, bool use_stdout = false) :

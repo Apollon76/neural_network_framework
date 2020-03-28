@@ -4,6 +4,8 @@
 #include <glog/logging.h>
 #include <cxxopts.hpp>
 #include <src/io/csv.hpp>
+#include <src/io/img.hpp>
+#include <src/io/filesystem.hpp>
 #include <src/data_processing/data_utils.hpp>
 #include <src/scoring/scoring.hpp>
 #include "neural_network.hpp"
@@ -87,8 +89,8 @@ void FitNN(NeuralNetwork* neural_network,
 }
 
 void DigitRecognizer(const std::string& data_path, const std::string& output, std::unique_ptr<IOptimizer> optimizer) {
-    auto[x_train, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv");
-    auto x_test = LoadMnistX(data_path + "/kaggle-digit-recognizer/test.csv");
+    auto [x_train, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv", true);
+    auto x_test = LoadMnistX(data_path + "/kaggle-digit-recognizer/test.csv", true);
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
     LOG(INFO) << "Start digit-recognizer neural network...";
@@ -110,8 +112,42 @@ void DigitRecognizer(const std::string& data_path, const std::string& output, st
 }
 
 void Mnist(const std::string& data_path) {
-    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
-    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
+    auto [x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv", false);
+    auto [x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv", false);
+
+    std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
+
+    LOG(INFO) << "Start mnist neural network...";
+    auto neural_network = BuildMnistNN(std::make_unique<Optimizer>(0.00001));
+    FitNN(&neural_network, 20, x_train, y_train, x_test, y_test);
+
+    auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+    auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_test), y_test);
+    std::cout << "Final train score: " << train_score << " final test score: " << test_score << std::endl;
+}
+
+std::tuple<arma::mat, arma::mat> LoadMnistPng(const std::string& path) {
+    std::cout << "Loading png mnist dataset from " << path << std::endl;
+    Timer timer("Load of "+ path, true);
+    auto paths = nn_framework::io::Filesystem::ListFiles(path);
+    nn_framework::io::ImgReader reader(paths);
+
+    arma::uchar_mat x(paths.size(), 28 * 28);
+    arma::s32_mat y(paths.size(), 1);
+    int pos = 0;
+    for (const auto& [name, img] : reader.LoadDataWithNames<arma::u8>()) {
+        ensure(img.n_slices == 1, "mnist images should be grayscale");
+        x.row(pos) = img.slice(0).as_row();
+        y.row(pos) = std::stoi(name.substr(10, 1)); // 000000-numX.png
+        pos++;
+    }
+    auto y_one_hot = nn_framework::data_processing::OneHotEncoding(y);
+    return {arma::conv_to<arma::mat>::from(x), arma::conv_to<arma::mat>::from(y_one_hot)};
+}
+
+void MnistPng(const std::string& data_path) {
+    auto [x_train, y_train] = LoadMnistPng(data_path + "/mnist-png/train");
+    auto [x_test, y_test] = LoadMnistPng(data_path + "/mnist-png/test");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
@@ -129,11 +165,14 @@ int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
 
     cxxopts::Options options("nn framework main");
-
     options.add_options()
             ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../.."));
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data"].as<std::string>();
+
+    MnistPng(data_path + "/data");
+    Mnist(data_path + "/data");
+    return 0;
 
     // Mnist(data_path);
 //    DigitRecognizer(data_path, "predictions-sgd-0.001.csv", std::make_unique<Optimizer>(0.0001));

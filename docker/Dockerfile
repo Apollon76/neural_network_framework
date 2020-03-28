@@ -16,9 +16,15 @@ RUN apt update && apt install -y \
 	autoconf \
     libopenblas-dev \
     liblapack-dev \
-    libgtest-dev\
-    python3\
-    python3-pip
+    libgtest-dev \
+    python3 \
+    python3-pip \
+    automake \
+    libtool \
+    g++ \
+    unzip \
+    libjpeg-dev \
+    libpng-dev
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -63,18 +69,7 @@ RUN cp /tmp/cxxopts/include/cxxopts.hpp /usr/include/cxxopts.hpp
 RUN wget https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp
 RUN mkdir -p /usr/include/nlohmann && mv json.hpp /usr/include/nlohmann/json.hpp
 
-# sshd:
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-
-RUN echo "StrictHostKeyChecking=no" >> /etc/ssh/ssh_config
-EXPOSE 22
-RUN groupadd -g 10000 user
-RUN useradd -u 10000 -g 10000 -m user && yes password | passwd user
-RUN mkdir /var/run/sshd
-
 # protobuf
-RUN yes | apt-get install autoconf automake libtool g++
 RUN git clone https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
 WORKDIR /tmp/protobuf
 RUN git submodule update --init --recursive
@@ -86,6 +81,22 @@ RUN ldconfig
 # cereal
 RUN git clone https://github.com/USCiLab/cereal.git /tmp/cereal
 RUN mkdir -p /usr/include/ && mv /tmp/cereal/include/cereal  /usr/include/
+
+# CImg
+RUN mkdir -p /tmp/CImg
+WORKDIR /tmp/CImg
+RUN wget https://github.com/dtschump/CImg/archive/v.2.8.4.zip
+RUN unzip v.2.8.4.zip && cp CImg-v.2.8.4/CImg.h /usr/include/
+
+# sshd:
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+RUN echo "StrictHostKeyChecking=no" >> /etc/ssh/ssh_config
+EXPOSE 22
+RUN groupadd -g 10000 user
+RUN useradd -u 10000 -g 10000 -m user && yes password | passwd user
+RUN mkdir /var/run/sshd
 
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
