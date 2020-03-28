@@ -39,16 +39,27 @@ public:
     }
 
     double Fit(const Tensor<T> &input, const Tensor<T> &output) {
+        DLOG(INFO) << "Fitting neural network...";
         std::vector<Tensor<T>> inter_outputs = {input};
         for (auto &&layer : layers) {
+            DLOG(INFO) << "Fit forward layer: " << layer->GetName();
             inter_outputs.push_back(layer->Apply(inter_outputs.back()));
         }
+        DLOG(INFO) << "Expected outputs: " << std::endl << output.ToString() << std::endl
+                   << "Actual outputs: " << std::endl << inter_outputs.back().ToString();
         Tensor<T> last_output_gradient = loss->GetGradients(inter_outputs.back(), output);
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; i--) {
+            DLOG(INFO) << "Propagate gradients backward for layer: " << layers[i]->GetName();
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], last_output_gradient);
+            DLOG(INFO) << "Found gradients: "
+                       << gradients.input_gradients.ToString() << std::endl
+                       << gradients.layer_gradients.ToString() << std::endl;
             auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients, layers[i].get());
+            DLOG(INFO) << "Optimizer applied...";
             layers[i]->ApplyGradients(gradients_to_apply);
+            DLOG(INFO) << "Gradients applied...";
             last_output_gradient = gradients.input_gradients;
+            DLOG(INFO) << "Last output gradient updated...";
         }
         return loss->GetLoss(inter_outputs.back(), output);
     }
