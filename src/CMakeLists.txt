@@ -42,7 +42,6 @@ add_library(neural_network_framework SHARED
         io/img.hpp
         io/filesystem.hpp
         scoring/scoring.hpp
-        serializable.hpp
         os_utils.hpp
         ${PROTO_HEADER})
 

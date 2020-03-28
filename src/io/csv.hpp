@@ -2,7 +2,6 @@
 
 #include <utility>
 #include <vector>
-#include <armadillo>
 #include <csv/csv.h>
 #include <src/utils.hpp>
 

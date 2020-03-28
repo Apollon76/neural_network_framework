@@ -1,12 +1,14 @@
 #include <gmock/gmock.h>
 #include <armadillo>
+#include <src/tensor.hpp>
 #include "utils.h"
 
-void MATRIX_SHOULD_BE_EQUAL_TO(const arma::mat& actual, const arma::mat& expected, double tolerance) {
+template<typename T>
+void MATRIX_SHOULD_BE_EQUAL_TO(const Tensor<T> &actual, const Tensor<T> &expected, double tolerance) {
     std::stringstream message;
-    message << "Expected matrix: " << std::endl;
-    arma::arma_ostream::print(message, expected, true);
-    message << "But given matrix: " << std::endl;
-    arma::arma_ostream::print(message, actual, true);
-    ASSERT_TRUE(arma::approx_equal(actual, expected, "both", tolerance, tolerance)) << message.str();
+    message << "Expected matrix: " << std::endl << expected << "Bug given matrix: " << std::endl << actual;
+    ASSERT_TRUE(arma::approx_equal(actual.Values(), expected.Values(), "both", tolerance, tolerance)) << message.str();
 }
+
+template void
+MATRIX_SHOULD_BE_EQUAL_TO<double>(const Tensor<double> &actual, const Tensor<double> &expected, double tolerance);
