@@ -3,9 +3,39 @@
 #include <armadillo>
 #include <utility>
 #include <vector>
-#include "utils.hpp"
+#include <src/utils.hpp>
 
 using TensorDimensions = std::vector<int>;
+
+template<typename T>
+class TensorInitializer {
+public:
+    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+            : D(),
+              values(arma::Mat<T>({x})) {
+    }
+
+    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : D(), values() {
+        auto other = std::optional<TensorDimensions>();
+        auto valueList = std::vector<arma::Row<T>>();
+        for (auto &&item : list) {
+            ensure(!other.has_value() || item.D == other.value(),
+                   "Nested tensors must have equal dimensions");
+            other = item.D;
+            valueList.push_back(item.values.as_row());
+        }
+        ensure(other.has_value(), "Tensor dimensions must be non-empty");
+        values = arma::Mat<T>(list.size(), valueList[0].size());
+        for (size_t i = 0; i < list.size(); i++) {
+            values.row(i) = valueList[i];
+        }
+        D = other.value();
+        D.insert(D.begin(), list.size());
+    }
+
+    TensorDimensions D;
+    arma::Mat<T> values;
+};
 
 template<typename T>
 class Tensor {
@@ -53,68 +83,36 @@ public:
         return D[0];
     }
 
+    template<typename FillType>
+    static Tensor<T> filled(TensorDimensions d, FillType fill) {
+        static_assert(std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_ones>>::value != 0 ||
+                      std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_zeros>>::value != 0 ||
+                      std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randn>>::value != 0 ||
+                      std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randu>>::value != 0);
+        auto batch_size = d[0];
+        auto other_size = std::accumulate(d.begin() + 1, d.end(), 1,
+                                          [](int a, int b) { return a * b; });
+        return Tensor<T>(d, arma::Mat<T>(batch_size, other_size, fill));
+    }
+
+    static Tensor<T> init(TensorInitializer<T> initializer) {
+        return Tensor<T>(initializer.D, initializer.values);
+    }
+
+    static Tensor<T> fromVector(const std::vector<std::vector<T>> &values) {
+        auto tensor = filled<T>({(int) values.size(), (int) values[0].size()}, arma::fill::zeros);
+        for (int i = 0; i < (int) values.size(); i++) {
+            for (int s = 0; s < (int) values[0].size(); s++) {
+                tensor.Values().at(i, s) = values[i][s];
+            }
+        }
+        return tensor;
+    }
+
     TensorDimensions D;
 private:
     arma::Mat<T> values;
 };
-
-
-template<typename T>
-class TensorInitializer {
-public:
-    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-            : dimensions(),
-              values(arma::Mat<T>({x})) {
-    }
-
-    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : dimensions(), values() {
-        auto other = std::optional<TensorDimensions>();
-        auto valueList = std::vector<arma::Row<T>>();
-        for (auto &&item : list) {
-            ensure(!other.has_value() || item.dimensions == other.value(),
-                   "Nested tensors must have equal dimensions");
-            other = item.dimensions;
-            valueList.push_back(item.values.as_row());
-        }
-        ensure(other.has_value(), "Tensor dimensions must be non-empty");
-        values = arma::Mat<T>(list.size(), valueList[0].size());
-        for (size_t i = 0; i < list.size(); i++) {
-            values.row(i) = valueList[i];
-        }
-        dimensions = other.value();
-        dimensions.insert(dimensions.begin(), list.size());
-    }
-
-    Tensor<T> R() const {
-        return Tensor<T>(dimensions, values);
-    }
-
-    TensorDimensions dimensions;
-    arma::Mat<T> values;
-};
-
-template<typename T, typename FillType>
-Tensor<T> TensorFill(TensorDimensions d, FillType fill) {
-    static_assert(std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_ones>>::value != 0 ||
-                  std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_zeros>>::value != 0 ||
-                  std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randn>>::value != 0 ||
-                  std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randu>>::value != 0);
-    auto batch_size = d[0];
-    auto other_size = std::accumulate(d.begin() + 1, d.end(), 1,
-                                      [](int a, int b) { return a * b; });
-    return Tensor<T>(d, arma::Mat<T>(batch_size, other_size, fill));
-}
-
-template<typename T>
-Tensor<T> CreateMatrix(const std::vector<std::vector<T>> &values) {
-    auto mat = TensorFill<T>({(int) values.size(), (int) values[0].size()}, arma::fill::zeros);
-    for (int i = 0; i < (int) values.size(); i++) {
-        for (int s = 0; s < (int) values[0].size(); s++) {
-            mat.Values().at(i, s) = values[i][s];
-        }
-    }
-    return mat;
-}
 
 template<typename T>
 std::string FormatDimensions(const Tensor<T> &t) {

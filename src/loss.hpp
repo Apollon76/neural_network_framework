@@ -1,25 +1,27 @@
 #pragma once
 
 #include <armadillo>
+#include <src/tensor.hpp>
 
-
+template<typename T>
 class ILoss : public ISerializable {
 public:
-    [[nodiscard]] virtual double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const = 0;
+    [[nodiscard]] virtual double GetLoss(const Tensor<T> &inputs, const Tensor<T> &outputs) const = 0;
 
-    [[nodiscard]] virtual arma::mat GetGradients(const arma::mat &input, const arma::mat &outputs) const = 0;
+    [[nodiscard]] virtual Tensor<T> GetGradients(const Tensor<T> &input, const Tensor<T> &outputs) const = 0;
 
     virtual ~ILoss() = default;
 };
 
-class MSELoss : public ILoss {
+template<typename T>
+class MSELoss : public ILoss<T> {
 public:
-    [[nodiscard]] double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const override {
-        return arma::accu(arma::pow(inputs - outputs, 2)) / inputs.n_rows;
+    [[nodiscard]] double GetLoss(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
+        return arma::accu(arma::pow(inputs.Values() - outputs.Values(), 2)) / inputs.BatchCount();
     }
 
-    [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
-        return 2 * (inputs - outputs) / inputs.n_rows;
+    [[nodiscard]] Tensor<T> GetGradients(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
+        return Tensor<T>(inputs.D, 2 * (inputs.Values() - outputs.Values()) / inputs.BatchCount());
     }
 
     [[nodiscard]] json Serialize() const override {
@@ -27,14 +29,15 @@ public:
     }
 };
 
-class CategoricalCrossEntropyLoss : public ILoss {
- public:
-    [[nodiscard]] double GetLoss(const arma::mat &inputs, const arma::mat &outputs) const override {
-        return arma::mean(arma::sum(outputs % arma::log(inputs), 1) * -1);
+template<typename T>
+class CategoricalCrossEntropyLoss : public ILoss<T> {
+public:
+    [[nodiscard]] double GetLoss(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
+        return arma::mean(arma::sum(outputs.Values() % arma::log(inputs.Values()), 1) * -1);
     }
 
-    [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
-        return -outputs / inputs;
+    [[nodiscard]] Tensor<T> GetGradients(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
+        return Tensor<T>(inputs.D, -outputs.Values() / inputs.Values());
     }
 
     [[nodiscard]] json Serialize() const override {

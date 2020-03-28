@@ -3,9 +3,13 @@
 #include <armadillo>
 #include <vector>
 #include <glog/logging.h>
+
+#include <src/tensor.hpp>
+
 #include "interface.h"
 
-class SigmoidActivationLayer : public ILayer {
+template<typename T>
+class SigmoidActivationLayer : public ILayer<T> {
 public:
     [[nodiscard]] std::string ToString() const override {
         return GetName();
@@ -15,22 +19,25 @@ public:
         return "SigmoidActivation";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
-        return 1 / (1 + arma::exp(-input));
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        return Tensor<T>(input.D, 1 / (1 + arma::exp(-input.Values())));
     }
 
-    [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &inputs,
-            const arma::mat &output_gradients
+    [[nodiscard]] Gradients<T> PullGradientsBackward(
+            const Tensor<T> &inputs,
+            const Tensor<T> &output_gradients
     ) const override {
         auto activation_result = Apply(inputs);
-        return Gradients{
-                output_gradients % ((activation_result) % (1 - activation_result)),
-                arma::mat()
+        return Gradients<T>{
+                Tensor<T>(
+                        inputs.D,
+                        output_gradients.Values() % ((activation_result.Values()) % (1 - activation_result.Values()))
+                ),
+                Tensor<T>()
         };
     }
 
-    void ApplyGradients(const arma::mat &) override {}
+    void ApplyGradients(const Tensor<T> &) override {}
 
     json Serialize() const override {
         return json{
@@ -40,8 +47,9 @@ public:
 };
 
 
-class SoftmaxActivationLayer : public ILayer {
- public:
+template<typename T>
+class SoftmaxActivationLayer : public ILayer<T> {
+public:
     [[nodiscard]] std::string ToString() const override {
         return GetName();
     }
@@ -50,28 +58,34 @@ class SoftmaxActivationLayer : public ILayer {
         return "SoftmaxActivation";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
-        arma::mat shifted_input = input - arma::max(input, 1) * arma::ones(1, input.n_cols); // todo (mpivko): do we need shift?
-        arma::mat repeated_sum = arma::sum(arma::exp(shifted_input), 1) * arma::ones(1, input.n_cols);
-        return arma::exp(shifted_input) / repeated_sum;
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        // todo (sivukhin): Generalize sotfmax for tensor of arbitary dimension
+        ensure(input.Rank() == 2, "SoftMax activation supported only for tensors of rank = 2");
+        arma::Mat<T> shifted_input =
+                input.Values() -
+                arma::max(input.Values(), 1) * arma::ones(1, input.D[1]); // todo (mpivko): do we need shift?
+        arma::Mat<T> repeated_sum = arma::sum(arma::exp(shifted_input), 1) * arma::ones(1, input.D[1]);
+        return Tensor<T>(input.D, arma::exp(shifted_input) / repeated_sum);
     }
 
-    [[nodiscard]] Gradients PullGradientsBackward(
-        const arma::mat &inputs,
-        const arma::mat &output_gradients
+    [[nodiscard]] Gradients<T> PullGradientsBackward(
+            const Tensor<T> &inputs,
+            const Tensor<T> &output_gradients
     ) const override {
-        arma::mat forward_outputs = Apply(inputs); // todo (mpivko): maybe cache this in field?
+        auto forward_outputs = Apply(inputs); // todo (mpivko): maybe cache this in field?
 
-        arma::mat sum = arma::sum(output_gradients % forward_outputs, 1);
-        arma::mat repeated_sum = sum * arma::ones(1, output_gradients.n_cols);
+        arma::mat sum = arma::sum(output_gradients.Values() % forward_outputs.Values(), 1);
+        arma::mat repeated_sum = sum * arma::ones(1, output_gradients.D[1]);
 
-        return Gradients{
-            (output_gradients % forward_outputs) - (repeated_sum % forward_outputs),
-            arma::mat()
+        return Gradients<T>{
+                Tensor<T>(inputs.D,
+                          (output_gradients.Values() % forward_outputs.Values()) -
+                          (repeated_sum % forward_outputs.Values())),
+                Tensor<T>()
         };
     }
 
-    void ApplyGradients(const arma::mat &) override {}
+    void ApplyGradients(const Tensor<T> &) override {}
 
     json Serialize() const override {
         return json{
@@ -81,7 +95,8 @@ class SoftmaxActivationLayer : public ILayer {
 };
 
 
-class ReLUActivationLayer : public ILayer {
+template<typename T>
+class ReLUActivationLayer : public ILayer<T> {
 public:
     [[nodiscard]] std::string ToString() const override {
         return GetName();
@@ -91,33 +106,33 @@ public:
         return "ReLU Activation";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
-        auto result = input;
-        result.for_each([](arma::mat::elem_type& value) {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        auto result = input.Values();
+        result.for_each([](arma::mat::elem_type &value) {
             if (value < 0)
                 value = 0;
         });
-        return result;
+        return Tensor<T>(input.D, result);
     }
 
-    [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &inputs,
-            const arma::mat &output_gradients
+    [[nodiscard]] Gradients<T> PullGradientsBackward(
+            const Tensor<T> &inputs,
+            const Tensor<T> &output_gradients
     ) const override {
-        auto differentiated = inputs;
-        differentiated.for_each([](arma::mat::elem_type& value) {
+        auto differentiated = inputs.Values();
+        differentiated.for_each([](T &value) {
             if (value < 0)
                 value = 0;
             else
                 value = 1;
         });
-        return Gradients{
-                output_gradients % differentiated,
-                arma::mat()
+        return Gradients<T>{
+                Tensor<T>(inputs.D, output_gradients.Values() % differentiated),
+                Tensor<T>()
         };
     }
 
-    void ApplyGradients(const arma::mat &) override {}
+    void ApplyGradients(const Tensor<T> &) override {}
 
     json Serialize() const override {
         return json{
@@ -127,32 +142,38 @@ public:
 };
 
 
-class TanhActivationLayer : public ILayer {
+template<typename T>
+class TanhActivationLayer : public ILayer<T> {
 public:
     [[nodiscard]] std::string ToString() const override {
         return GetName();
     }
+
     [[nodiscard]] std::string GetName() const override {
         return "Tanh Activation";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat &input) const override {
-        return (arma::exp(input) - arma::exp(-input)) / (arma::exp(input) + arma::exp(-input));
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        auto &values = input.Values();
+        return Tensor<T>(
+                input.D,
+                (arma::exp(values) - arma::exp(-values)) / (arma::exp(values) + arma::exp(-values))
+        );
     }
 
-    [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat &inputs,
-            const arma::mat &output_gradients
+    [[nodiscard]] Gradients<T> PullGradientsBackward(
+            const Tensor<T> &inputs,
+            const Tensor<T> &output_gradients
     ) const override {
-        arma::mat forward_outputs = Apply(inputs);
-        arma::mat differentiated = (1 - arma::square(forward_outputs));
-        return Gradients{
-                output_gradients % (differentiated),
-                arma::mat()
+        arma::Mat<T> forward_outputs = Apply(inputs).Values();
+        arma::Mat<T> differentiated = (1 - arma::square(forward_outputs));
+        return Gradients<T>{
+                Tensor<T>(inputs.D, output_gradients.Values() % (differentiated)),
+                Tensor<T>()
         };
     }
 
-    void ApplyGradients(const arma::mat &) override {}
+    void ApplyGradients(const Tensor<T> &) override {}
 
     json Serialize() const override {
         return json{

@@ -1,23 +1,25 @@
 #pragma once
 
-#include "activations.hpp"
-#include "../utils.hpp"
+#include <src/tensor.hpp>
+#include <src/utils.hpp>
 #include <layers.pb.h>
 
+#include "activations.hpp"
 
-class DenseLayer : public ILayer {
+template<typename T>
+class DenseLayer : public ILayer<T> {
 public:
-    DenseLayer(arma::uword n_rows, arma::uword n_cols) : weights_and_bias(arma::randu(n_rows + 1, n_cols) - 0.5) {
+    DenseLayer(int input_size, int output_size)
+            : weights_and_bias({input_size + 1, output_size}, arma::randu(input_size + 1, output_size) - 0.5) {
     }
 
-    [[nodiscard]] arma::mat GetWeightsAndBias() const {
+    [[nodiscard]] Tensor<T> GetWeightsAndBias() const {
         return weights_and_bias;
     }
 
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
-        stream << std::endl;
-        arma::arma_ostream::print(stream, weights_and_bias, true);
+        stream << std::endl << weights_and_bias;
         return GetName() + stream.str();
     }
 
@@ -25,39 +27,45 @@ public:
         return "Dense[" + FormatDimensions(weights_and_bias) + " (including bias)]";
     }
 
-    [[nodiscard]] arma::mat Apply(const arma::mat& input) const override {
-        return arma::affmul(weights_and_bias.t(), input.t()).t();
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        return Tensor<T>(
+                {input.D[0], weights_and_bias.D[1]},
+                arma::affmul(weights_and_bias.Values().t(), input.Values().t()).t()
+        );
     }
 
-    [[nodiscard]] Gradients PullGradientsBackward(
-            const arma::mat& inputs,
-            const arma::mat& output_gradients
+    [[nodiscard]] Gradients<T> PullGradientsBackward(
+            const Tensor<T> &inputs,
+            const Tensor<T> &output_gradients
     ) const override {
         DLOG(INFO) << "Pull gradients for dense layer: "
                    << "inputs=[" + FormatDimensions(inputs) + "], "
                    << "output_gradients=[" + FormatDimensions(output_gradients) + "], "
                    << "weights_and_bias=[" + FormatDimensions((weights_and_bias)) + "]";
-        auto weights = weights_and_bias.head_rows(weights_and_bias.n_rows - 1);
-        auto bias = weights_and_bias.tail_rows(1);
-        return Gradients{
-                output_gradients * arma::trans(weights),
-                arma::join_cols(inputs.t() * output_gradients, arma::sum(output_gradients, 0))
+        auto weights = weights_and_bias.Values().head_rows(weights_and_bias.D[0] - 1);
+        auto bias = weights_and_bias.Values().tail_rows(1);
+        return Gradients<T>{
+                Tensor<T>(inputs.D, output_gradients.Values() * arma::trans(weights)),
+                Tensor<T>(weights_and_bias.D, arma::join_cols(
+                        inputs.Values().t() * output_gradients.Values(),
+                        arma::sum(output_gradients.Values(), 0))
+                )
         };
     }
 
-    void ApplyGradients(const arma::mat& gradients) override {
+    void ApplyGradients(const Tensor<T> &gradients) override {
         DLOG(INFO) << "Apply gradients for dense layer: "
-                   << "gradients[0]=[" + FormatDimensions((gradients)) + "], "
-                   << "weights=[" + FormatDimensions((weights_and_bias)) + "]";
-        weights_and_bias += gradients;
+                   << "gradients[0]=[" + FormatDimensions(gradients) + "], "
+                   << "weights=[" + FormatDimensions(weights_and_bias) + "]";
+        weights_and_bias.Values() += gradients.Values();
     }
 
     json Serialize() const override {
         return json{
                 {"layer_type", "dense"},
                 {"params",     {
-                                       {"n_rows", weights_and_bias.n_rows - 1},
-                                       {"n_cols", weights_and_bias.n_cols}
+                                       {"n_rows", weights_and_bias.D[0] - 1},
+                                       {"n_cols", weights_and_bias.D[1]}
                                }
                 }
         };
@@ -65,11 +73,11 @@ public:
 
     void SaveWeights(std::ostream *out) {
         DenseWeights matrix;
-        matrix.set_n_rows(weights_and_bias.n_rows);
-        matrix.set_n_cols(weights_and_bias.n_cols);
-        for (arma::uword i = 0; i < weights_and_bias.n_rows; ++i) {
+        matrix.set_n_rows(weights_and_bias.D[0]);
+        matrix.set_n_cols(weights_and_bias.D[1]);
+        for (int i = 0; i < weights_and_bias.D[0]; ++i) {
             auto row = matrix.add_vectors();
-            for (arma::uword j = 0; j < weights_and_bias.n_cols; ++j) {
+            for (int j = 0; j < weights_and_bias.D[1]; ++j) {
                 row->add_scalars(weights_and_bias.at(i, j));
             }
         }
@@ -87,5 +95,5 @@ public:
     }
 
 private:
-    arma::mat weights_and_bias;
+    Tensor<T> weights_and_bias;
 };
