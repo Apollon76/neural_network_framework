@@ -25,6 +25,8 @@ public:
     [[nodiscard]] json Serialize() const override {
         return {"loss_type", "mse"};
     }
+
+    void FromJson(json data) override {}
 };
 
 class CategoricalCrossEntropyLoss : public ILoss {
@@ -40,4 +42,6 @@ class CategoricalCrossEntropyLoss : public ILoss {
     [[nodiscard]] json Serialize() const override {
         return {"loss_type", "categorical_cross_entropy"};
     }
+
+    void FromJson(json data) override {}
 };

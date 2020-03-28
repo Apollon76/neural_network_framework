@@ -74,15 +74,15 @@ public:
             serialized_layers.push_back(layer->Serialize());
         }
         return {
-                {"model_type", "sequential"},
                 {"optimizer",  optimizer->Serialize()},
                 {"loss",       loss->Serialize()},
                 {"layers",     serialized_layers}
         };
     }
 
-    void FromJson()
-
+    void FromJson(json data) override {
+        // TODO
+    }
 
 private:
     std::vector<std::unique_ptr<ILayer>> layers;

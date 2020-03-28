@@ -27,6 +27,11 @@ public:
         };
     }
 
+    void FromJson(json data) override {
+        auto params = data["params"];
+        learning_rate = params["learning_rate"];
+    }
+
 private:
     double learning_rate;
 };
@@ -51,6 +56,12 @@ public:
                 {"optimizer_type", "momentum"},
                 {"params", {{"learning_rate", learning_rate}, {"momentum", momentum}}}
         };
+    }
+
+    void FromJson(json data) override {
+        auto params = data["params"];
+        learning_rate = params["learning_rate"];
+        momentum = params["momentum"];
     }
 
 private:
@@ -84,6 +95,13 @@ public:
                 {"optimizer_type", "rmsprop"},
                 {"params", {{"learning_rate", learning_rate}, {"rho", rho}, {"eps", epsilon}}}
         };
+    }
+
+    void FromJson(json data) override {
+        auto params = data["params"];
+        learning_rate = params["learning_rate"];
+        rho = params["rho"];
+        epsilon = params["eps"];
     }
 
 private:
