@@ -14,7 +14,7 @@ TEST(SerializationTest, TestSaveOptimizer) {
         std::ofstream os(filename);
         cereal::JSONOutputArchive oarchive(os);
 
-        auto optimizer = AdamOptimizer(0.01, 0.8, 0.7, 1e-5);
+        auto optimizer = AdamOptimizer<double>(0.01, 0.8, 0.7, 1e-5);
         oarchive(optimizer);
     }
 
@@ -22,7 +22,7 @@ TEST(SerializationTest, TestSaveOptimizer) {
         std::ifstream is(filename);
         cereal::JSONInputArchive iarchive(is);
 
-        AdamOptimizer deserialized;
+        AdamOptimizer<double> deserialized;
         iarchive(deserialized);
     }
 }
@@ -33,7 +33,7 @@ TEST(SerializationTest, TestDenseAsLayer) {
         std::ofstream os(filename);
         cereal::JSONOutputArchive oarchive(os);
 
-        std::shared_ptr<ILayer> layer = std::make_shared<DenseLayer>(4, 5);
+        std::shared_ptr<ILayer<double>> layer = std::make_shared<DenseLayer<double>>(4, 5);
         oarchive(layer);
     }
 
@@ -41,7 +41,7 @@ TEST(SerializationTest, TestDenseAsLayer) {
         std::ifstream is(filename);
         cereal::JSONInputArchive iarchive(is);
 
-        std::shared_ptr<ILayer> deserialized;
+        std::shared_ptr<ILayer<double>> deserialized;
         iarchive(deserialized);
     }
 }
@@ -52,7 +52,7 @@ TEST(SerializationTest, TestReLUASLayer) {
         std::ofstream os(filename);
         cereal::JSONOutputArchive oarchive(os);
 
-        std::shared_ptr<ILayer> layer = std::make_shared<ReLUActivationLayer>();
+        std::shared_ptr<ILayer<double>> layer = std::make_shared<ReLUActivationLayer<double>>();
         oarchive(layer);
     }
 
@@ -60,16 +60,16 @@ TEST(SerializationTest, TestReLUASLayer) {
         std::ifstream is(filename);
         cereal::JSONInputArchive iarchive(is);
 
-        std::shared_ptr<ILayer> deserialized;
+        std::shared_ptr<ILayer<double>> deserialized;
         iarchive(deserialized);
 
-        auto input_batch = arma::mat(
+        auto input_batch = Tensor<double>::init(
                 {
                         {1, 2, 3},
                         {4, 5, -6}
                 });
-        arma::mat actual = deserialized->Apply(input_batch);
-        MATRIX_SHOULD_BE_EQUAL_TO(actual, arma::mat(
+        auto actual = deserialized->Apply(input_batch);
+        MATRIX_SHOULD_BE_EQUAL_TO(actual, Tensor<double>::init(
                 {
                         {1, 2, 3},
                         {4, 5, 0}
@@ -78,11 +78,11 @@ TEST(SerializationTest, TestReLUASLayer) {
 }
 
 TEST(SerializationTest, TestSequentialModel) {
-    auto model = NeuralNetwork(std::make_unique<Optimizer>(0.01), std::make_unique<MSELoss>());;
-    model.AddLayer(std::make_unique<DenseLayer>(2, 3));
-    model.AddLayer(std::make_unique<SigmoidActivationLayer>());
-    model.AddLayer(std::make_unique<DenseLayer>(3, 1));
-    model.AddLayer(std::make_unique<ReLUActivationLayer>());
+    auto model = NeuralNetwork<double>(std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>());;
+    model.AddLayer(std::make_unique<DenseLayer<double>>(2, 3));
+    model.AddLayer(std::make_unique<SigmoidActivationLayer<double>>());
+    model.AddLayer(std::make_unique<DenseLayer<double>>(3, 1));
+    model.AddLayer(std::make_unique<ReLUActivationLayer<double>>());
 
     std::vector<std::string> expected_names;
     for (size_t i = 0; i < 4; ++i) {
@@ -101,7 +101,7 @@ TEST(SerializationTest, TestSequentialModel) {
         std::ifstream is(filename);
         cereal::JSONInputArchive iarchive(is);
 
-        NeuralNetwork deserialized;
+        NeuralNetwork<double> deserialized;
         iarchive(deserialized);
 
         std::vector<std::string> actual_names;

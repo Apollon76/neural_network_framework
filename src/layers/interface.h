@@ -1,29 +1,31 @@
 #pragma once
 
-#include <armadillo>
 #include <vector>
 #include <glog/logging.h>
 
+#include <src/tensor.hpp>
 
+template<typename T>
 struct Gradients {
-    arma::mat input_gradients;
-    arma::mat layer_gradients;
+    Tensor<T> input_gradients;
+    Tensor<T> layer_gradients;
 };
 
+template<typename T>
 class ILayer {
 public:
     [[nodiscard]] virtual std::string ToString() const = 0;
 
     [[nodiscard]] virtual std::string GetName() const = 0;
 
-    [[nodiscard]] virtual arma::mat Apply(const arma::mat &) const = 0;
+    [[nodiscard]] virtual Tensor<T> Apply(const Tensor<T> &) const = 0;
 
-    [[nodiscard]] virtual Gradients PullGradientsBackward(
-            const arma::mat &input,
-            const arma::mat &output_gradients
+    [[nodiscard]] virtual Gradients<T> PullGradientsBackward(
+            const Tensor<T> &input,
+            const Tensor<T> &output_gradients
     ) const = 0;
 
-    virtual void ApplyGradients(const arma::mat &gradients) = 0;
+    virtual void ApplyGradients(const Tensor<T> &gradients) = 0;
 
     virtual ~ILayer() = default;
 };
