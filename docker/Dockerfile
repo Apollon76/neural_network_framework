@@ -83,6 +83,10 @@ RUN ./configure
 RUN make -j$(nproc) && make check && make install
 RUN ldconfig
 
+# cereal
+RUN git clone https://github.com/USCiLab/cereal.git /tmp/cereal
+RUN mkdir -p /usr/include/ && mv /tmp/cereal/include/cereal  /usr/include/
+
 RUN echo 'CXX="/usr/bin/clang++-8"' >> /etc/environment
 RUN echo 'CC="/usr/bin/clang-8"' >> /etc/environment
 

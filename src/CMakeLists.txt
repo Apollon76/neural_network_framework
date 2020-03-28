@@ -31,5 +31,5 @@ target_link_libraries(neural_network_framework ${ARMADILLO_LIBRARIES} pthread gl
 set_target_properties(neural_network_framework PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(neural_network_framework PUBLIC ${PROJECT_SOURCE_DIR})
 
-add_executable(main main.cpp)
+add_executable(main main.cpp tmp.cpp)
 target_link_libraries(main neural_network_framework)

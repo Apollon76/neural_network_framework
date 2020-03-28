@@ -12,8 +12,11 @@
 #include "utils.hpp"
 #include "layers/dense.hpp"
 #include "os_utils.hpp"
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/json.hpp>
 
-void GenerateInputs(arma::mat &inputs, arma::mat &outputs) {
+
+void GenerateInputs(arma::mat& inputs, arma::mat& outputs) {
     std::random_device random_device;
     std::mt19937 gen(random_device());
     std::uniform_int_distribution<> coin(0, 1);
@@ -59,22 +62,25 @@ NeuralNetwork BuildMnistNN(std::unique_ptr<IOptimizer> optimizer) {
     return neural_network;
 }
 
-void FitNN(NeuralNetwork *neural_network,
+void FitNN(NeuralNetwork* neural_network,
            int epochs,
-           const arma::mat &x_train,
-           const arma::mat &y_train,
-           const std::optional<arma::mat> &x_test=std::nullopt,
-           const std::optional<arma::mat> &y_test=std::nullopt) {
+           const arma::mat& x_train,
+           const arma::mat& y_train,
+           const std::optional<arma::mat>& x_test = std::nullopt,
+           const std::optional<arma::mat>& y_test = std::nullopt) {
     Timer timer("Fitting ");
     for (int i = 0; i < epochs; i++) {
         auto loss = neural_network->Fit(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             if (x_test.has_value()) {
-                auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(*x_test), *y_test);
-                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score << " Test score: " << test_score << std::endl;
+                auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(*x_test),
+                                                                                *y_test);
+                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score
+                          << " Test score: " << test_score << std::endl;
             } else {
-                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score << std::endl;
+                std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << " Train score: " << train_score
+                          << std::endl;
             }
         } else {
             std::cout << "(" << i << "/" << epochs << ") Loss: " << loss << std::endl;
@@ -83,7 +89,7 @@ void FitNN(NeuralNetwork *neural_network,
 }
 
 void DigitRecognizer(const std::string& data_path, const std::string& output, std::unique_ptr<IOptimizer> optimizer) {
-    auto [x_train, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv");
+    auto[x_train, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv");
     auto x_test = LoadMnistX(data_path + "/kaggle-digit-recognizer/test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
@@ -106,8 +112,8 @@ void DigitRecognizer(const std::string& data_path, const std::string& output, st
 }
 
 void Mnist(const std::string& data_path) {
-    auto [x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
-    auto [x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
+    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
+    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
@@ -120,14 +126,14 @@ void Mnist(const std::string& data_path) {
     std::cout << "Final train score: " << train_score << " final test score: " << test_score << std::endl;
 }
 
-int main(int argc, char **argv) {
+
+int main1(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
 
     cxxopts::Options options("nn framework main");
 
     options.add_options()
-        ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../.."))
-    ;
+            ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../.."));
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data"].as<std::string>();
 
