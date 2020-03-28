@@ -129,16 +129,24 @@ public:
         return TensorConstView<T>(*this, {}).At(x, y);
     }
 
+    TensorView<T> &View() {
+        return TensorView<T>(*this, {});
+    }
+
+    TensorConstView<T> &ConstView() {
+        return TensorConstView<T>(*this, {});
+    }
+
     T &at(int x, int y) {
-        return TensorView<T>(*this, {}).At(x, y);
+        return View().At(x, y);
     }
 
     [[nodiscard]] arma::Mat<T> &Values() {
-        return TensorView<T>(*this, {}).Matrix();
+        return View().Matrix();
     }
 
     [[nodiscard]] const arma::Mat<T> &Values() const {
-        return TensorConstView<T>(*this, {}).Matrix();
+        return ConstView().Matrix();
     }
 
     [[nodiscard]] int Rank() const {
@@ -174,7 +182,7 @@ public:
         for (int a = 0; a < (d.size() >= 5 ? d[d.size() - 5] : 1); a++) {
             for (int b = 0; b < (d.size() >= 4 ? d[d.size() - 4] : 1); b++) {
                 for (int c = 0; c < (d.size() >= 3 ? d[d.size() - 3] : 1); c++) {
-                    values.at(a, b, c) = arma::Mat<T>(d.size() == 1 ? d[0] : d[d.size() - 2], d.back(), fill);
+                    values.at(a, b, c) = arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
                 }
             }
         }
