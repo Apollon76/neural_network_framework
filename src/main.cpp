@@ -145,9 +145,16 @@ std::tuple<arma::mat, arma::mat> LoadMnistPng(const std::string& path) {
     return {arma::conv_to<arma::mat>::from(x), arma::conv_to<arma::mat>::from(y_one_hot)};
 }
 
-void MnistPng(const std::string& data_path) {
+void MnistPng(const std::string& data_path, bool scale) {
     auto [x_train, y_train] = LoadMnistPng(data_path + "/mnist-png/train");
     auto [x_test, y_test] = LoadMnistPng(data_path + "/mnist-png/test");
+
+    if (scale) {
+        nn_framework::data_processing::Scaler<double> scaler;
+        scaler.Fit(x_train);
+        x_train = scaler.Transform(x_train);
+        x_test = scaler.Transform(x_test);
+    }
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
@@ -160,7 +167,6 @@ void MnistPng(const std::string& data_path) {
     std::cout << "Final train score: " << train_score << " final test score: " << test_score << std::endl;
 }
 
-
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
 
@@ -170,7 +176,7 @@ int main(int argc, char** argv) {
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data"].as<std::string>();
 
-    MnistPng(data_path + "/data");
+    MnistPng(data_path + "/data", false);
     Mnist(data_path + "/data");
     return 0;
 

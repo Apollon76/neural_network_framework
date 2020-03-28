@@ -13,4 +13,27 @@ namespace nn_framework::data_processing {
         }
         return result;
     }
+
+    template <class T>
+    class Scaler {
+    public:
+        void Fit(const arma::Mat<T>& matrix) {
+            mean = arma::mean(matrix);
+            stddev = arma::stddev(matrix);
+            stddev.transform([](double val) { return val < eps ? 1 : val; });
+            fitted = true;
+        }
+
+        arma::Mat<T> Transform(const arma::Mat<T>& matrix) const {
+            ensure(fitted, "scaler should be fitted before using transform");
+            return (matrix - arma::ones(matrix.n_rows, 1) * mean) / (arma::ones(matrix.n_rows, 1) * stddev);
+        }
+
+    private:
+        bool fitted = false;
+        arma::mat mean;
+        arma::mat stddev;
+
+        constexpr static double eps = 1e-10;
+    };
 }
