@@ -57,9 +57,6 @@ template<typename T>
 class Tensor;
 
 template<typename T>
-std::ostream &operator<<(std::ostream &os, const Tensor<T> &t);
-
-template<typename T>
 class TensorConstView {
 public:
     TensorConstView(const Tensor<T> &_ref, std::vector<int> _indices);
@@ -81,7 +78,7 @@ private:
 template<typename T>
 class TensorView {
 public:
-    TensorView(Tensor<T> &_ref, std::vector<int> _indices);
+    TensorView(Tensor<T> &_ref, TensorDimensions _indices);
 
     TensorView<T> View(int id) const;
 
@@ -98,7 +95,7 @@ public:
 private:
     Tensor<T> &ref;
     int fixed;
-    std::array<int, 3> indices;
+    std::array<size_t, 3> indices;
 };
 
 template<typename T>
@@ -124,7 +121,15 @@ public:
 
     template<typename TNew>
     Tensor<TNew> ConvertTo() const {
-        return Tensor<TNew>(D, arma::conv_to<arma::Mat<TNew>>::from(values));
+        auto result = arma::field<arma::Mat<TNew>>(values.n_rows, values.n_cols, values.n_slices);
+        for (int i = 0; i < (int) values.n_rows; i++) {
+            for (int s = 0; s < (int) values.n_cols; s++) {
+                for (int k = 0; k < (int) values.n_slices; k++) {
+                    result.at(i, s, k) = arma::conv_to<arma::Mat<TNew>>::from(values.at(i, s, k));
+                }
+            }
+        }
+        return Tensor<TNew>(D, result);
     }
 
     const T &at(int x, int y) const {
@@ -196,9 +201,9 @@ public:
     }
 
     static Tensor<T> fromVector(const std::vector<std::vector<T>> &values) {
-        auto tensor = filled<T>({(int) values.size(), (int) values[0].size()}, arma::fill::zeros);
-        for (int i = 0; i < (int) values.size(); i++) {
-            for (int s = 0; s < (int) values[0].size(); s++) {
+        auto tensor = Tensor<T>::filled({(int) values.size(), (int) values[0].size()}, arma::fill::zeros);
+        for (size_t i = 0; i < values.size(); i++) {
+            for (size_t s = 0; s < values[0].size(); s++) {
                 tensor.Values().at(i, s) = values[i][s];
             }
         }
@@ -232,7 +237,7 @@ TensorConstView<T> TensorConstView<T>::View(int id) const {
 template<typename T>
 TensorConstView<T> TensorConstView<T>::View(int x, int y) const {
     ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = std::vector<int>();
+    auto new_indices = TensorDimensions();
     for (int i = 3 - fixed; i < 3; i++) {
         new_indices.push_back(indices[i]);
     }
@@ -253,7 +258,7 @@ const T &TensorConstView<T>::At(int x, int y) const {
 }
 
 template<typename T>
-TensorView<T>::TensorView(Tensor<T> &_ref, std::vector<int> _indices) : ref(_ref), fixed(_indices.size()), indices() {
+TensorView<T>::TensorView(Tensor<T> &_ref, TensorDimensions _indices) : ref(_ref), fixed(_indices.size()), indices() {
     ensure(_indices.size() <= 3);
     int shift = 3 - (int) _indices.size();
     for (int i = 0; i < 3; i++) {
@@ -272,7 +277,7 @@ TensorView<T> TensorView<T>::View(int id) const {
 template<typename T>
 TensorView<T> TensorView<T>::View(int x, int y) const {
     ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = std::vector<int>();
+    auto new_indices = TensorDimensions();
     for (int i = 3 - fixed; i < 3; i++) {
         new_indices.push_back(indices[i]);
     }
