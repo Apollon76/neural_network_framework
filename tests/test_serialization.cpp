@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <cereal/archives/json.hpp>
 #include <src/optimizer.hpp>
+#include <src/layers/dense.hpp>
+#include "utils.h"
 
 
 TEST(SerializationTest, TestSaveOptimizer) {
@@ -20,5 +22,55 @@ TEST(SerializationTest, TestSaveOptimizer) {
 
         AdamOptimizer deserialized;
         iarchive(deserialized);
+    }
+}
+
+TEST(SerializationTest, TestDenseAsLayer) {
+    auto filename = "layer_test.json";
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        std::shared_ptr<ILayer> layer = std::make_shared<DenseLayer>(4, 5);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        std::shared_ptr<ILayer> deserialized;
+        iarchive(deserialized);
+    }
+}
+
+TEST(SerializationTest, TestReLUASLayer) {
+    auto filename = "layer_test.json";
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        std::shared_ptr<ILayer> layer = std::make_shared<ReLUActivationLayer>();
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        std::shared_ptr<ILayer> deserialized;
+        iarchive(deserialized);
+
+        auto input_batch = arma::mat(
+                {
+                        {1, 2, 3},
+                        {4, 5, -6}
+                });
+        arma::mat actual = deserialized->Apply(input_batch);
+        MATRIX_SHOULD_BE_EQUAL_TO(actual, arma::mat(
+                {
+                        {1, 2, 3},
+                        {4, 5, 0}
+                }));
     }
 }

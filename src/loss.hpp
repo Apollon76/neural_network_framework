@@ -1,6 +1,7 @@
 #pragma once
 
 #include <armadillo>
+#include <cereal/types/polymorphic.hpp>
 
 
 class ILoss {
@@ -21,7 +22,15 @@ public:
     [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
         return 2 * (inputs - outputs) / inputs.n_rows;
     }
+
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar();
+    }
 };
+
+CEREAL_REGISTER_TYPE(MSELoss)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILoss, MSELoss)
 
 class CategoricalCrossEntropyLoss : public ILoss {
  public:
@@ -32,4 +41,12 @@ class CategoricalCrossEntropyLoss : public ILoss {
     [[nodiscard]] arma::mat GetGradients(const arma::mat &inputs, const arma::mat &outputs) const override {
         return -outputs / inputs;
     }
+
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar();
+    }
 };
+
+CEREAL_REGISTER_TYPE(CategoricalCrossEntropyLoss)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILoss, CategoricalCrossEntropyLoss)
