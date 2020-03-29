@@ -72,13 +72,23 @@ public:
               values(_values) {}
 
     template<typename TNew>
+    Tensor<TNew> ForEach(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
+        auto newValues = createValuesContainer<TNew>(D);
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    newValues.at(a, b, c) = f(values.at(a, b, c));
+                }
+            }
+        }
+        return Tensor<TNew>(D, newValues);
+    }
+
+    template<typename TNew>
     Tensor<TNew> ConvertTo() const {
-        return Tensor<TNew>(
-                D,
-                values.for_each([](const arma::Mat<T> &e) {
-                    return arma::conv_to<arma::Mat<TNew>>::from(e);
-                })
-        );
+        return ForEach<TNew>([](const arma::Mat<T> &e) {
+            return arma::conv_to<arma::Mat<TNew>>::from(e);
+        });
     }
 
     // note (sivukhin): used only in tests
@@ -111,15 +121,8 @@ public:
     }
 
     std::string ToString() const {
-        auto result = std::string();
-        for (size_t i = 0; i < D.size(); i++) {
-            if (i != 0) {
-                result += " x ";
-            }
-            result += std::to_string(D[i]);
-        }
         std::stringstream stream;
-        stream << "Tensor(" + std::string(typeid(T).name()) << ")" << "[" << result << "]" << std::endl
+        stream << "Tensor(" + std::string(typeid(T).name()) << ")" << "[" << FormatDimensions(D) << "]" << std::endl
                << values << std::endl;
         return stream.str();
     }
@@ -131,15 +134,11 @@ public:
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_zeros>>::value != 0 ||
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randn>>::value != 0 ||
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randu>>::value != 0);
-        auto values = createValuesContainer<T>(d);
-        for (int a = 0; a < (d.size() >= 3 ? d[0] : 1); a++) {
-            for (int b = 0; b < (d.size() >= 4 ? d[1] : 1); b++) {
-                for (int c = 0; c < (d.size() >= 5 ? d[2] : 1); c++) {
-                    values.at(a, b, c) = arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
-                }
-            }
-        }
-        return Tensor<T>(d, values);
+        auto emptyTensor = Tensor<T>(d, createValuesContainer<T>(d));
+        return emptyTensor.template ForEach<T>(
+                [&d, &fill](const arma::Mat<T> &) {
+                    return arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
+                });
     }
 
     static Tensor<T> init(TensorInitializer<T> initializer) {
@@ -163,13 +162,5 @@ private:
 
 template<typename T>
 std::string FormatDimensions(const Tensor<T> &t) {
-    auto d = t.D;
-    auto result = std::string();
-    for (size_t i = 0; i < d.size(); i++) {
-        if (i != 0) {
-            result += " x ";
-        }
-        result += std::to_string(d[i]);
-    }
-    return result;
+    return FormatDimensions(t.D);
 }
