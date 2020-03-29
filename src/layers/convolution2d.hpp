@@ -1,12 +1,9 @@
 #pragma once
 
 #include <src/tensor.hpp>
+#include <src/arma_math.hpp>
 
 #include "interface.h"
-
-enum ConvolutionPadding {
-    Same,
-};
 
 template<typename T>
 class Convolution2dLayer : public ILayer<T> {
@@ -21,6 +18,10 @@ public:
                     kernel_width
             }, arma::fill::randu)),
               padding(_padding) {
+    }
+
+    const Tensor<T> &Weights() const {
+        return weights;
     }
 
     [[nodiscard]] std::string ToString() const override {
@@ -40,9 +41,13 @@ public:
                 auto layer = arma::Mat<T>(input.D[2], input.D[3], arma::fill::zeros);
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
                     // todo (sivukhin): use ConvolutionPadding here
-                    layer += arma::conv2(input.Values(), weights.Values(), "same");
+                    layer += Conv2d(
+                            input.Field()(batch, input_channel),
+                            weights.Field()(filter, input_channel),
+                            padding
+                    );
                 }
-                result.Field().at(batch, filter) = layer / weights.D[1];
+                result.Field()(batch, filter) = layer / weights.D[1];
             }
         }
         return result;
@@ -52,8 +57,8 @@ public:
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
     ) const override {
-        auto weightsGradients = Tensor<T>::filled(weights.D, arma::fill::zeros);
         auto inputGradients = Tensor<T>::filled(input.D, arma::fill::zeros);
+        auto weightsGradients = Tensor<T>::filled(weights.D, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
@@ -66,7 +71,7 @@ public:
                                                       inputImage.n_cols - 1) %
                                     outputGradients.submat(0, outputGradients.n_rows - weights.D[2],
                                                            0, outputGradients.n_cols - weights.D[3]));
-                            weightsGradients.Field().at(filter, input_channel).at(w, h) += grad / weights.D[1];
+                            weightsGradients.Field()(filter, input_channel)(w, h) += grad / weights.D[1];
                         }
                     }
                 }

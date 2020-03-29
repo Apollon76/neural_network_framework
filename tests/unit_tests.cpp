@@ -6,6 +6,7 @@
 #include <src/neural_network.hpp>
 #include <src/optimizer.hpp>
 #include "utils.h"
+#include <iostream>
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
@@ -324,18 +325,94 @@ TEST(AdamOptimizerTest, TestAdamGradientStep) {
                               Tensor<double>::init({-15.81138814, -9.133237456, -9.133258618}), 1e-6);
 }
 
-TEST(ConsolutionLayerTest, TestPullGradientsBackward) {
-    auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
+TEST(Convolution2dLayerTest, TestApply) {
+    // 3 входных канала, 2 фильтра
+    auto layer = Convolution2dLayer<double>(3, 2, 3, 2, ConvolutionPadding::Same);
+    // 2 батча, 3 входных канала
+    auto input = Tensor<double>::filled({2, 3, 5, 5}, arma::fill::randu);
+    auto output = layer.Apply(input);
+    auto expected = Tensor<double>::filled({2, 2, 5, 5}, arma::fill::zeros);
+    for (int batch = 0; batch < 2; batch++) {
+        for (int filter = 0; filter < 2; filter++) {
+            for (int x = 0; x < 5; x++) {
+                for (int y = 0; y < 5; y++) {
+                    double result = 0;
+                    for (int input_channel = 0; input_channel < 3; input_channel++) {
+                        for (int dx = 0; dx < 3; dx++) {
+                            for (int dy = 0; dy < 2; dy++) {
+                                if (x + dx < 5 && y + dy < 5) {
+                                    result += input.Field()(batch, input_channel)(x + dx, y + dy) *
+                                              layer.Weights().Field()(filter, input_channel)(dx, dy);
+                                }
+                            }
+                        }
+                    }
+                    expected.Field()(batch, filter)(x, y) = result / 3;
+                }
+            }
+        }
+    }
+    MATRIX_SHOULD_BE_EQUAL_TO(output, expected);
 }
 
-TEST(ConsolutionLayerTest, TestApplyGradient) {
-    auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
+TEST(Convolution2dLayerTest, TestApplyGradient) {
+    auto layer = Convolution2dLayer<double>(2, 2, 2, 2, ConvolutionPadding::Same);
+    auto gradients = Tensor<double>::init(
+            {
+                    {
+                            {
+                                    {1,  2},
+                                    {3,  4}
+                            },
+                            {
+                                    {5,  6},
+                                    {7,  8}
+                            }
+                    },
+                    {
+                            {
+                                    {-1, -2},
+                                    {-3, -4}
+                            },
+                            {
+                                    {-5, -6},
+                                    {-7, -8}
+                            }
+                    }
+            });
+    arma::field<arma::Mat<double>> weights = layer.Weights().Field();
+    layer.ApplyGradients(gradients);
+    MATRIX_SHOULD_BE_EQUAL_TO(layer.Weights(), Tensor<double>::init(
+            {
+                    {
+                            {
+                                    {weights(0, 0)(0, 0) + 1, weights(0, 0)(0, 1) + 2},
+                                    {weights(0, 0)(1, 0) + 3, weights(0, 0)(1, 1) + 4}
+                            },
+                            {
+                                    {weights(0, 1)(0, 0) + 5, weights(0, 1)(0, 1) + 6},
+                                    {weights(0, 1)(1, 0) + 7, weights(0, 1)(1, 1) + 8}
+                            },
+                    },
+                    {
+                            {
+                                    {weights(1, 0)(0, 0) - 1, weights(1, 0)(0, 1) - 2},
+                                    {weights(1, 0)(1, 0) - 3, weights(1, 0)(1, 1) - 4}
+                            },
+                            {
+                                    {weights(1, 1)(0, 0) - 5, weights(1, 1)(0, 1) - 6},
+                                    {weights(1, 1)(1, 0) - 7, weights(1, 1)(1, 1) - 8}
+                            },
+                    }
+            }
+    ));
 }
 
-TEST(ConsolutionLayerTest, TestApply) {
+TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
     auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
+    layer.PullGradientsBackward()
 }
 
-TEST(ConsolutionLayerTest, TestSerialization) {
+TEST(Convolution2dLayerTest, TestSerialization) {
 
 }

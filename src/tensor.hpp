@@ -8,38 +8,8 @@
 using TensorDimensions = std::vector<int>;
 
 template<typename T>
-class TensorInitializer {
-public:
-    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-            : D(),
-              values(arma::Mat<T>({x})) {
-    }
-
-    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : D(), values() {
-        auto other = std::optional<TensorDimensions>();
-        auto valueList = std::vector<arma::Row<T>>();
-        for (auto &&item : list) {
-            ensure(!other.has_value() || item.D == other.value(),
-                   "Nested tensors must have equal dimensions");
-            other = item.D;
-            valueList.push_back(item.values.as_row());
-        }
-        ensure(other.has_value(), "Tensor dimensions must be non-empty");
-        values = arma::Mat<T>(list.size(), valueList[0].size());
-        for (size_t i = 0; i < list.size(); i++) {
-            values.row(i) = valueList[i];
-        }
-        D = other.value();
-        D.insert(D.begin(), list.size());
-    }
-
-    TensorDimensions D;
-    arma::Mat<T> values;
-};
-
-template<typename T>
 arma::field<arma::Mat<T>> createValuesContainer(TensorDimensions d) {
-    ensure(d.size() <= 5);
+    ensure(d.size() <= 5, "Supported only tensors with not more than 5 dimension");
     if (d.size() <= 2) {
         return arma::field<arma::Mat<T>>(1);
     } else if (d.size() == 3) {
@@ -52,6 +22,54 @@ arma::field<arma::Mat<T>> createValuesContainer(TensorDimensions d) {
         throw std::logic_error("too many dimensions");
     }
 }
+
+template<typename T>
+class TensorInitializer {
+public:
+    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+            : D(),
+              values([x]() {
+                  auto field = createValuesContainer<T>({1});
+                  field.at(0) = arma::Mat<T>({x});
+                  return field;
+              }()) {
+    }
+
+    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : D(), values() {
+        auto other = std::optional<TensorDimensions>();
+        auto valueList = std::vector<arma::field<arma::Mat<T>>>();
+        for (auto &&item : list) {
+            ensure(!other.has_value() || item.D == other.value(),
+                   "Nested tensors must have equal dimensions");
+            other = item.D;
+            valueList.push_back(item.values);
+        }
+        ensure(other.has_value(), "Tensor dimensions must be non-empty");
+        D = other.value();
+        D.insert(D.begin(), list.size());
+        values = createValuesContainer<T>(D);
+        if (D.size() <= 2) {
+            auto matrix = arma::Mat<T>(D.size() > 0 ? D[0] : 1, D.size() > 1 ? D[1] : 1);
+            for (size_t i = 0; i < matrix.n_rows; i++) {
+                for (size_t s = 0; s < matrix.n_cols; s++) {
+                    matrix.at(i, s) = valueList[i].at(0, 0, 0).at(s);
+                }
+            }
+            values.at(0, 0, 0) = matrix;
+        } else {
+            for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+                for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                    for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                        values.at(a, b, c) = valueList[a].at(b, c);
+                    }
+                }
+            }
+        }
+    }
+
+    TensorDimensions D;
+    arma::field<arma::Mat<T>> values;
+};
 
 template<typename T>
 class Tensor {
@@ -97,13 +115,13 @@ public:
     }
 
     [[nodiscard]] arma::Mat<T> &Values() {
-        ensure(Rank() <= 2);
+        ensure(Rank() <= 2, "Rank of tensor must be not more than 2 for Values extraction");
         // note (sivukhin): .at(...) doesn't check bounds and all arma::field data just stored in single array
         return values.at(0, 0, 0);
     }
 
     [[nodiscard]] const arma::Mat<T> &Values() const {
-        ensure(Rank() <= 2);
+        ensure(Rank() <= 2, "Rank of tensor must be not more than 2 for Values extraction");
         // note (sivukhin): .at(...) doesn't check bounds and all arma::field data just stored in single array
         return values.at(0, 0, 0);
     }
