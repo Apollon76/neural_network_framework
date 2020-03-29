@@ -108,27 +108,33 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
-        auto result = input.Values();
-        result.for_each([](arma::mat::elem_type &value) {
-            if (value < 0)
-                value = 0;
+        return input.template Transform<T>([](const arma::Mat<T> &v) {
+            auto result = v;
+            result.for_each([](T &value) {
+                if (value < 0) {
+                    value = 0;
+                }
+            });
+            return result;
         });
-        return Tensor<T>(input.D, result);
     }
 
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
     ) const override {
-        auto differentiated = inputs.Values();
-        differentiated.for_each([](T &value) {
-            if (value < 0)
-                value = 0;
-            else
-                value = 1;
-        });
         return Gradients<T>{
-                Tensor<T>(inputs.D, output_gradients.Values() % differentiated),
+                output_gradients.template DiffWith<T>(inputs, [](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+                    auto diff = b;
+                    diff.for_each([](T &value) {
+                        if (value < 0) {
+                            value = 0;
+                        } else {
+                            value = 1;
+                        }
+                    });
+                    return a % diff;
+                }),
                 Tensor<T>()
         };
     }

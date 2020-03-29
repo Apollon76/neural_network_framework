@@ -70,6 +70,7 @@ NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optim
                                                 std::make_unique<CategoricalCrossEntropyLoss<double>>());
     neural_network
             .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, 1, 3, 3, ConvolutionPadding::Same))
+            .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
             .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, 1, 28, 28}))
             .AddLayer(std::make_unique<DenseLayer<double>>(784 * 1, 100))
             .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())
@@ -115,7 +116,7 @@ void DigitRecognizer(const std::string &data_path, const std::string &output,
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNN(std::move(optimizer));
-    FitNN(&neural_network, 100 , x_train, y_train);
+    FitNN(&neural_network, 40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
@@ -145,7 +146,7 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNNConv(std::move(optimizer));
-    FitNN(&neural_network, 100, x_train, y_train);
+    FitNN(&neural_network, 40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
