@@ -69,7 +69,7 @@ TEST(SerializationTest, TestReLUASLayer) {
                         {4, 5, -6}
                 });
         auto actual = deserialized->Apply(input_batch);
-        MATRIX_SHOULD_BE_EQUAL_TO(actual, Tensor<double>::init(
+        TENSOR_SHOULD_BE_EQUAL_TO(actual, Tensor<double>::init(
                 {
                         {1, 2, 3},
                         {4, 5, 0}

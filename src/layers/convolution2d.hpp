@@ -62,18 +62,21 @@ public:
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                    auto inputImage = input.Field().at(batch, input_channel);
-                    auto outputGradients = output_gradients.Field().at(batch, filter);
+                    auto inputImage = input.Field()(batch, input_channel);
+                    auto outputGradients = output_gradients.Field()(batch, filter);
+                    auto &currentWeights = weightsGradients.Field()(filter, input_channel);
+                    // todo (sivukhin): looks like some kind of convolution...
                     for (int w = 0; w < weights.D[2]; w++) {
                         for (int h = 0; h < weights.D[3]; h++) {
-                            auto grad = arma::accu(
-                                    inputImage.submat(weights.D[2], weights.D[3], inputImage.n_rows - 1,
-                                                      inputImage.n_cols - 1) %
-                                    outputGradients.submat(0, outputGradients.n_rows - weights.D[2],
-                                                           0, outputGradients.n_cols - weights.D[3]));
-                            weightsGradients.Field()(filter, input_channel)(w, h) += grad / weights.D[1];
+                            currentWeights(w, h) += arma::accu(
+                                    inputImage.submat(0, 0, input.D[2] - w - 1, input.D[3] - h - 1) %
+                                    outputGradients.submat(w, h, input.D[2] - 1, input.D[3] - 1)
+                            ) / weights.D[1];
                         }
                     }
+                    inputGradients.Field()(batch, input_channel) += Conv2d(
+                            outputGradients, weights.Field()(filter, input_channel), ConvolutionPadding::Same
+                    ) / weights.D[1];
                 }
             }
         }
@@ -86,7 +89,7 @@ public:
     void ApplyGradients(const Tensor<T> &gradients) override {
         for (int filter = 0; filter < weights.D[0]; filter++) {
             for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                weights.Field().at(filter, input_channel) += gradients.Field().at(filter, input_channel);
+                weights.Field()(filter, input_channel) += gradients.Field()(filter, input_channel);
             }
         }
     }

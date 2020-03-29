@@ -4,7 +4,18 @@
 #include "utils.h"
 
 template<typename T>
-void MATRIX_SHOULD_BE_EQUAL_TO(const Tensor<T> &actual, const Tensor<T> &expected, double tolerance) {
+void MATRIX_SHOULD_BE_EQUAL_TO(const arma::Mat<T> &actual, const arma::Mat<T> &expected, double tolerance) {
+    ASSERT_TRUE(arma::approx_equal(actual, expected, "both", tolerance, tolerance))
+                                << "Expected matrix: " << std::endl << expected
+                                << "Bug given matrix: " << std::endl << actual
+                                << "Diff (expected - actual): " << std::endl << (expected - actual);
+}
+
+template void
+MATRIX_SHOULD_BE_EQUAL_TO<double>(const arma::Mat<double> &actual, const arma::Mat<double> &expected, double tolerance);
+
+template<typename T>
+void TENSOR_SHOULD_BE_EQUAL_TO(const Tensor<T> &actual, const Tensor<T> &expected, double tolerance) {
     ASSERT_TRUE(actual.D == expected.D)
                                 << "Expected tensor with dimensions " << FormatDimensions(expected)
                                 << " but given " << FormatDimensions(actual);
@@ -24,4 +35,4 @@ void MATRIX_SHOULD_BE_EQUAL_TO(const Tensor<T> &actual, const Tensor<T> &expecte
 }
 
 template void
-MATRIX_SHOULD_BE_EQUAL_TO<double>(const Tensor<double> &actual, const Tensor<double> &expected, double tolerance);
+TENSOR_SHOULD_BE_EQUAL_TO<double>(const Tensor<double> &actual, const Tensor<double> &expected, double tolerance);

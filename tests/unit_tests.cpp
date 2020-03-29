@@ -31,8 +31,8 @@ TEST(SigmoidActivationLayerTest, TestPullGradientsBackward) {
                     {40 * sigmoidGradient(4), 50 * sigmoidGradient(5), 60 * sigmoidGradient(6)},
             }
     );
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
 }
 
 
@@ -73,7 +73,7 @@ TEST(DenseLayerTest, TestPullGradientsBackward) {
                     }
             }
     );
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, expected_layer_gradients);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, expected_layer_gradients);
 }
 
 TEST(DenseLayerTest, TestApplyGradient) {
@@ -94,7 +94,7 @@ TEST(DenseLayerTest, TestApplyGradient) {
             }
     );
     layer.ApplyGradients(g);
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), expected);
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), expected);
 
 }
 
@@ -120,7 +120,7 @@ TEST(DenseLayerTest, TestApply) {
             }
     );
     auto actual = layer.Apply(i);
-    MATRIX_SHOULD_BE_EQUAL_TO(actual, expected);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual, expected);
 }
 
 TEST(DenseLayerTest, TestSerialization) {
@@ -129,7 +129,7 @@ TEST(DenseLayerTest, TestSerialization) {
     layer.SaveWeights(&weights);
     auto anotherLayer = DenseLayer<double>(5, 5);
     anotherLayer.LoadWeights(&weights);
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), anotherLayer.GetWeightsAndBias());
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.GetWeightsAndBias(), anotherLayer.GetWeightsAndBias());
 }
 
 TEST(NeuralNetworkTest, TestLinearDependency) {
@@ -150,7 +150,7 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
     for (int i = 0; i < 10000; i++) {
         network.Fit(inputs, outputs);
     }
-    MATRIX_SHOULD_BE_EQUAL_TO(
+    TENSOR_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
@@ -185,7 +185,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
     for (int i = 0; i < 10000; i++) {
         network.Fit(inputs, outputs);
     }
-    MATRIX_SHOULD_BE_EQUAL_TO(
+    TENSOR_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
@@ -204,7 +204,7 @@ TEST(MSETest, TestLoss) {
 TEST(MSETest, TestDerivative) {
     auto loss = MSELoss<double>();
     auto gradients = loss.GetGradients(Tensor<double>::init({{1, 2, 3}}), Tensor<double>::init({{5, 9, -1}}));
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients, Tensor<double>::init({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients, Tensor<double>::init({{2 * (1 - 5), 2 * (2 - 9), 2 * (3 + 1)}}));
 }
 
 TEST(ReLUActivationLayerTest, TestReLULayer) {
@@ -215,7 +215,7 @@ TEST(ReLUActivationLayerTest, TestReLULayer) {
                     {4, 5, -6}
             });
     auto actual = layer.Apply(input_batch);
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), Tensor<double>::init(
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), Tensor<double>::init(
             {
                     {1, 2, 3},
                     {4, 5, 0}
@@ -232,8 +232,8 @@ TEST(ReLUActivationLayerTest, TestReLULayer) {
                     {10, 20, 30},
                     {40, 50, 0}
             });
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
 }
 
 TEST(TanhActivationLayerTest, TestTanhLayer) {
@@ -249,7 +249,7 @@ TEST(TanhActivationLayerTest, TestTanhLayer) {
                     {0.7615942,  0.9640276,  0.9950548},
                     {-0.7615942, -0.9640276, -0.9950548}
             });
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), expected,
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), expected,
                               1e-6
     );
 
@@ -264,8 +264,8 @@ TEST(TanhActivationLayerTest, TestTanhLayer) {
                     {4.199743,  1.4130175,  0.29598176},
                     {-4.199743, -1.4130175, -0.29598176}
             });
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
-    MATRIX_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients, 1e-6);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients, 1e-6);
 }
 
 TEST(MomentumOptimizerTest, TestDifferentLayers) {
@@ -276,8 +276,8 @@ TEST(MomentumOptimizerTest, TestDifferentLayers) {
     auto firstLayerGradientStep = optimizer.GetGradientStep(Tensor<double>::init({1, 2, 3}), &firstLayer);
     auto secondLayerGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10, 20, 30}), &secondLayer);
 
-    MATRIX_SHOULD_BE_EQUAL_TO(firstLayerGradientStep, Tensor<double>::init({-0.5, -1, -1.5}));
-    MATRIX_SHOULD_BE_EQUAL_TO(secondLayerGradientStep, Tensor<double>::init({-5, -10, -15}));
+    TENSOR_SHOULD_BE_EQUAL_TO(firstLayerGradientStep, Tensor<double>::init({-0.5, -1, -1.5}));
+    TENSOR_SHOULD_BE_EQUAL_TO(secondLayerGradientStep, Tensor<double>::init({-5, -10, -15}));
 }
 
 TEST(MomentumOptimizerTest, TestMomentum) {
@@ -288,9 +288,9 @@ TEST(MomentumOptimizerTest, TestMomentum) {
     auto secondGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10, 20, 30}), &layer);
     auto thirdGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10, 20, 30}), &layer);
 
-    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, Tensor<double>::init({-50, -100, -150}));
-    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, Tensor<double>::init({-10, -20, -30}));
-    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, Tensor<double>::init({-6, -12, -18}));
+    TENSOR_SHOULD_BE_EQUAL_TO(firstGradientStep, Tensor<double>::init({-50, -100, -150}));
+    TENSOR_SHOULD_BE_EQUAL_TO(secondGradientStep, Tensor<double>::init({-10, -20, -30}));
+    TENSOR_SHOULD_BE_EQUAL_TO(thirdGradientStep, Tensor<double>::init({-6, -12, -18}));
 }
 
 TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
@@ -301,11 +301,11 @@ TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
     auto secondGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10, 20, 30}), &layer);
     auto thirdGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10000, 2, 3}), &layer);
 
-    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep, Tensor<double>::init({-0.5270463, -0.5270463, -0.5270463}),
+    TENSOR_SHOULD_BE_EQUAL_TO(firstGradientStep, Tensor<double>::init({-0.5270463, -0.5270463, -0.5270463}),
                               1e-6);
-    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep, Tensor<double>::init({-0.526783, -0.526782, -0.526782}),
+    TENSOR_SHOULD_BE_EQUAL_TO(secondGradientStep, Tensor<double>::init({-0.526783, -0.526782, -0.526782}),
                               1e-6);
-    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep, Tensor<double>::init({-0.5270462, -0.1588382, -0.158838}),
+    TENSOR_SHOULD_BE_EQUAL_TO(thirdGradientStep, Tensor<double>::init({-0.5270462, -0.1588382, -0.158838}),
                               1e-6);
 }
 
@@ -317,11 +317,11 @@ TEST(AdamOptimizerTest, TestAdamGradientStep) {
     auto secondGradientStep = optimizer.GetGradientStep(Tensor<double>::init({-1, -2, -3}), &layer);
     auto thirdGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10000, 2, 3}), &layer);
 
-    MATRIX_SHOULD_BE_EQUAL_TO(firstGradientStep,
+    TENSOR_SHOULD_BE_EQUAL_TO(firstGradientStep,
                               Tensor<double>::init({-15.81059779, -15.81119066, -15.81130046}), 1e-6);
-    MATRIX_SHOULD_BE_EQUAL_TO(secondGradientStep,
+    TENSOR_SHOULD_BE_EQUAL_TO(secondGradientStep,
                               Tensor<double>::init({11.18285631, 11.18306609, 11.18310494}), 1e-6);
-    MATRIX_SHOULD_BE_EQUAL_TO(thirdGradientStep,
+    TENSOR_SHOULD_BE_EQUAL_TO(thirdGradientStep,
                               Tensor<double>::init({-15.81138814, -9.133237456, -9.133258618}), 1e-6);
 }
 
@@ -352,7 +352,7 @@ TEST(Convolution2dLayerTest, TestApply) {
             }
         }
     }
-    MATRIX_SHOULD_BE_EQUAL_TO(output, expected);
+    TENSOR_SHOULD_BE_EQUAL_TO(output, expected);
 }
 
 TEST(Convolution2dLayerTest, TestApplyGradient) {
@@ -382,7 +382,7 @@ TEST(Convolution2dLayerTest, TestApplyGradient) {
             });
     arma::field<arma::Mat<double>> weights = layer.Weights().Field();
     layer.ApplyGradients(gradients);
-    MATRIX_SHOULD_BE_EQUAL_TO(layer.Weights(), Tensor<double>::init(
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.Weights(), Tensor<double>::init(
             {
                     {
                             {
@@ -410,9 +410,86 @@ TEST(Convolution2dLayerTest, TestApplyGradient) {
 
 TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
     auto layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
-    layer.PullGradientsBackward()
+    auto input = Tensor<double>::filled({4, 3, 5, 5}, arma::fill::randu);
+    auto output_gradients = Tensor<double>::filled({4, 2, 5, 5}, arma::fill::randu);
+    auto gradients = layer.PullGradientsBackward(input, output_gradients);
+    auto expected_layer_grad = Tensor<double>::filled({2, 3, 2, 2}, arma::fill::zeros);
+    auto expected_input_grad = Tensor<double>::filled({4, 3, 5, 5}, arma::fill::zeros);
+    for (int batch = 0; batch < 4; batch++) {
+        for (int input_channel = 0; input_channel < 3; input_channel++) {
+            for (int filter = 0; filter < 2; filter++) {
+                for (int x = 0; x < 5; x++) {
+                    for (int y = 0; y < 5; y++) {
+                        for (int dx = 0; dx < 2; dx++) {
+                            for (int dy = 0; dy < 2; dy++) {
+                                if (x + dx >= 5 || y + dy >= 5) {
+                                    continue;
+                                }
+                                // output[batch, filter, x + dx, y + dy] += input[batch, input_channel, x, y] * w[filter, input_channel, dx, dy] / input_channels
+                                expected_layer_grad.Field()(filter, input_channel)(dx, dy) +=
+                                        output_gradients.Field()(batch, filter)(x + dx, y + dy) *
+                                        input.Field()(batch, input_channel)(x, y) / 3;
+                                expected_input_grad.Field()(batch, input_channel)(x, y) +=
+                                        output_gradients.Field()(batch, filter)(x + dx, y + dy) *
+                                        layer.Weights().Field()(filter, input_channel)(dx, dy) / 3;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_input_grad);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, expected_layer_grad);
 }
 
 TEST(Convolution2dLayerTest, TestSerialization) {
 
+}
+
+TEST(ArmaConvolutionTest, TestValid) {
+    auto image = arma::mat(3, 3, arma::fill::randu);
+    auto kernel = arma::mat(1, 2, arma::fill::randu);
+    auto result = Conv2d(image, kernel, ConvolutionPadding::Valid);
+    MATRIX_SHOULD_BE_EQUAL_TO(result, arma::mat
+            ({
+                     {
+                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1),
+                             image(0, 1) * kernel(0, 0) + image(0, 2) * kernel(0, 1),
+                     },
+                     {
+                             image(1, 0) * kernel(0, 0) + image(1, 1) * kernel(0, 1),
+                             image(1, 1) * kernel(0, 0) + image(1, 2) * kernel(0, 1),
+                     },
+                     {
+                             image(2, 0) * kernel(0, 0) + image(2, 1) * kernel(0, 1),
+                             image(2, 1) * kernel(0, 0) + image(2, 2) * kernel(0, 1),
+                     },
+             })
+    );
+}
+
+TEST(ArmaConvolutionTest, TestSame) {
+    auto image = arma::mat(3, 3, arma::fill::randu);
+    auto kernel = arma::mat(1, 2, arma::fill::randu);
+    auto result = Conv2d(image, kernel, ConvolutionPadding::Same);
+    MATRIX_SHOULD_BE_EQUAL_TO(result, arma::mat
+            ({
+                     {
+                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1),
+                             image(0, 1) * kernel(0, 0) + image(0, 2) * kernel(0, 1),
+                             image(0, 2) * kernel(0, 0),
+                     },
+                     {
+                             image(1, 0) * kernel(0, 0) + image(1, 1) * kernel(0, 1),
+                             image(1, 1) * kernel(0, 0) + image(1, 2) * kernel(0, 1),
+                             image(1, 2) * kernel(0, 0),
+                     },
+                     {
+                             image(2, 0) * kernel(0, 0) + image(2, 1) * kernel(0, 1),
+                             image(2, 1) * kernel(0, 0) + image(2, 2) * kernel(0, 1),
+                             image(2, 2) * kernel(0, 0),
+                     },
+             })
+    );
 }
