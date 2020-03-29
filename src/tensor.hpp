@@ -8,44 +8,14 @@
 using TensorDimensions = std::vector<int>;
 
 template<typename T>
-class TensorInitializer {
-public:
-    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-            : D(),
-              values(arma::Mat<T>({x})) {
-    }
-
-    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : D(), values() {
-        auto other = std::optional<TensorDimensions>();
-        auto valueList = std::vector<arma::Row<T>>();
-        for (auto &&item : list) {
-            ensure(!other.has_value() || item.D == other.value(),
-                   "Nested tensors must have equal dimensions");
-            other = item.D;
-            valueList.push_back(item.values.as_row());
-        }
-        ensure(other.has_value(), "Tensor dimensions must be non-empty");
-        values = arma::Mat<T>(list.size(), valueList[0].size());
-        for (size_t i = 0; i < list.size(); i++) {
-            values.row(i) = valueList[i];
-        }
-        D = other.value();
-        D.insert(D.begin(), list.size());
-    }
-
-    TensorDimensions D;
-    arma::Mat<T> values;
-};
-
-template<typename T>
 arma::field<arma::Mat<T>> createValuesContainer(TensorDimensions d) {
-    ensure(d.size() <= 5);
+    ensure(d.size() <= 5, "Supported only tensors with not more than 5 dimension");
     if (d.size() <= 2) {
-        return arma::field<arma::Mat<T>>(1, 1, 1);
+        return arma::field<arma::Mat<T>>(1);
     } else if (d.size() == 3) {
-        return arma::field<arma::Mat<T>>(1, 1, d[0]);
+        return arma::field<arma::Mat<T>>(d[0]);
     } else if (d.size() == 4) {
-        return arma::field<arma::Mat<T>>(1, d[0], d[1]);
+        return arma::field<arma::Mat<T>>(d[0], d[1]);
     } else if (d.size() == 5) {
         return arma::field<arma::Mat<T>>(d[0], d[1], d[2]);
     } else {
@@ -54,64 +24,64 @@ arma::field<arma::Mat<T>> createValuesContainer(TensorDimensions d) {
 }
 
 template<typename T>
-class Tensor;
-
-template<typename T>
-class TensorConstView {
+class TensorInitializer {
 public:
-    TensorConstView(const Tensor<T> &_ref, std::vector<int> _indices);
+    TensorInitializer(T x) // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+            : D(),
+              values([x]() {
+                  auto field = createValuesContainer<T>({1});
+                  field.at(0) = arma::Mat<T>({x});
+                  return field;
+              }()) {
+    }
 
-    TensorConstView<T> View(int id) const;
+    TensorInitializer(std::initializer_list<TensorInitializer<T>> list) : D(), values() {
+        auto other = std::optional<TensorDimensions>();
+        auto valueList = std::vector<arma::field<arma::Mat<T>>>();
+        for (auto &&item : list) {
+            ensure(!other.has_value() || item.D == other.value(),
+                   "Nested tensors must have equal dimensions");
+            other = item.D;
+            valueList.push_back(item.values);
+        }
+        ensure(other.has_value(), "Tensor dimensions must be non-empty");
+        D = other.value();
+        D.insert(D.begin(), list.size());
+        values = createValuesContainer<T>(D);
+        if (D.size() <= 2) {
+            auto matrix = arma::Mat<T>(D.size() > 0 ? D[0] : 1, D.size() > 1 ? D[1] : 1);
+            for (size_t i = 0; i < matrix.n_rows; i++) {
+                for (size_t s = 0; s < matrix.n_cols; s++) {
+                    matrix.at(i, s) = valueList[i].at(0, 0, 0).at(s);
+                }
+            }
+            values.at(0, 0, 0) = matrix;
+        } else {
+            for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+                for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                    for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                        values.at(a, b, c) = valueList[a].at(b, c);
+                    }
+                }
+            }
+        }
+    }
 
-    TensorConstView<T> View(int x, int y) const;
-
-    const arma::Mat<T> &Matrix() const;
-
-    const T &At(int x, int y) const;
-
-private:
-    const Tensor<T> &ref;
-    int fixed;
-    std::array<int, 3> indices;
-};
-
-template<typename T>
-class TensorView {
-public:
-    TensorView(Tensor<T> &_ref, TensorDimensions _indices);
-
-    TensorView<T> View(int id) const;
-
-    TensorView<T> View(int x, int y) const;
-
-    const arma::Mat<T> &Matrix() const;
-
-    arma::Mat<T> &Matrix();
-
-    const T &At(int x, int y) const;
-
-    T &At(int x, int y);
-
-private:
-    Tensor<T> &ref;
-    int fixed;
-    std::array<size_t, 3> indices;
+    TensorDimensions D;
+    arma::field<arma::Mat<T>> values;
 };
 
 template<typename T>
 class Tensor {
-    friend TensorView<T>;
-    friend TensorConstView<T>;
-
 public:
     Tensor()
             : D(),
-              values(arma::field<arma::Mat<T>>(1, 1, 1)) {
+              values(arma::field<arma::Mat<T>>(1)) {
     }
 
     Tensor(TensorDimensions _dimensions, arma::Mat<T> _values)
             : D(std::move(_dimensions)),
-              values(arma::field<arma::Mat<T>>(1, 1, 1)) {
+              values(arma::field<arma::Mat<T>>(1)) {
         values.at(0, 0, 0) = _values;
     }
 
@@ -119,61 +89,97 @@ public:
             : D(std::move(_dimensions)),
               values(_values) {}
 
-    template<typename TNew>
-    Tensor<TNew> ConvertTo() const {
-        auto result = arma::field<arma::Mat<TNew>>(values.n_rows, values.n_cols, values.n_slices);
-        for (int i = 0; i < (int) values.n_rows; i++) {
-            for (int s = 0; s < (int) values.n_cols; s++) {
-                for (int k = 0; k < (int) values.n_slices; k++) {
-                    result.at(i, s, k) = arma::conv_to<arma::Mat<TNew>>::from(values.at(i, s, k));
+
+    void ForEach(const std::function<void(int, int, int, arma::Mat<T> &)> &f) {
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    f(a, b, c, values.at(a, b, c));
                 }
             }
         }
-        return Tensor<TNew>(D, result);
     }
 
-    const T &at(int x, int y) const {
-        return TensorConstView<T>(*this, {}).At(x, y);
+    void ForEach(const std::function<void(int, int, int, const arma::Mat<T> &)> &f) const {
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    f(a, b, c, values.at(a, b, c));
+                }
+            }
+        }
     }
 
-    TensorView<T> View() {
-        return TensorView<T>(*this, {});
+    template<typename TNew>
+    Tensor<TNew> Transform(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
+        auto newValues = Tensor<TNew>(D, createValuesContainer<TNew>(D));
+        newValues.ForEach([&f, this](int a, int b, int c, arma::Mat<TNew> &value) {
+            value = f(values.at(a, b, c));
+        });
+        return newValues;
     }
 
-    TensorConstView<T> ConstView() const {
-        return TensorConstView<T>(*this, {});
+    template<typename TNew>
+    TNew Aggregate(TNew initial, const std::function<void(TNew &, const arma::Mat<T> &)> &f) const {
+        ForEach([&initial, &f](int, int, int, const arma::Mat<T> &v) {
+            f(initial, v);
+        });
+        return initial;
     }
 
+    template<typename TNew>
+    Tensor<TNew> DiffWith(
+            const Tensor<T> &other,
+            const std::function<arma::Mat<TNew>(const arma::Mat<T> &, const arma::Mat<T> &)> &f
+    ) const {
+        ensure(D == other.D, "dimensions must be equal");
+        auto newValues = Tensor<TNew>(D, createValuesContainer<TNew>(D));
+        newValues.ForEach([&f, this, &other](int a, int b, int c, arma::Mat<T> &v) {
+            v = f(values.at(a, b, c), other.values.at(a, b, c));
+        });
+        // todo (sivukhin): fix dimension here
+        return newValues;
+    }
+
+    template<typename TNew>
+    Tensor<TNew> ConvertTo() const {
+        return Transform<TNew>([](const arma::Mat<T> &e) {
+            return arma::conv_to<arma::Mat<TNew>>::from(e);
+        });
+    }
+
+    // note (sivukhin): used only in tests
     T &at(int x, int y) {
-        return TensorView<T>(*this, {}).At(x, y);
+        return Values().at(x, y);
     }
 
     [[nodiscard]] arma::Mat<T> &Values() {
-        return TensorView<T>(*this, {}).Matrix();
+        ensure(Rank() <= 2, "Rank of tensor must be not more than 2 for Values extraction");
+        // note (sivukhin): .at(...) doesn't check bounds and all arma::field data just stored in single array
+        return values.at(0, 0, 0);
     }
 
     [[nodiscard]] const arma::Mat<T> &Values() const {
-        return TensorConstView<T>(*this, {}).Matrix();
+        ensure(Rank() <= 2, "Rank of tensor must be not more than 2 for Values extraction");
+        // note (sivukhin): .at(...) doesn't check bounds and all arma::field data just stored in single array
+        return values.at(0, 0, 0);
+    }
+
+    [[nodiscard]] const arma::field<arma::Mat<T>> &Field() const {
+        return values;
+    }
+
+    [[nodiscard]] arma::field<arma::Mat<T>> &Field() {
+        return values;
     }
 
     [[nodiscard]] int Rank() const {
         return D.size();
     }
 
-    [[nodiscard]] int BatchCount() const {
-        return D[0];
-    }
-
     std::string ToString() const {
-        auto result = std::string();
-        for (size_t i = 0; i < D.size(); i++) {
-            if (i != 0) {
-                result += " x ";
-            }
-            result += std::to_string(D[i]);
-        }
         std::stringstream stream;
-        stream << "Tensor(" + std::string(typeid(T).name()) << ")" << "[" << result << "]" << std::endl
+        stream << "Tensor(" + std::string(typeid(T).name()) << ")" << "[" << FormatDimensions(D) << "]" << std::endl
                << values << std::endl;
         return stream.str();
     }
@@ -185,15 +191,17 @@ public:
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_zeros>>::value != 0 ||
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randn>>::value != 0 ||
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randu>>::value != 0);
-        auto values = createValuesContainer<T>(d);
-        for (int a = 0; a < (d.size() >= 5 ? d[d.size() - 5] : 1); a++) {
-            for (int b = 0; b < (d.size() >= 4 ? d[d.size() - 4] : 1); b++) {
-                for (int c = 0; c < (d.size() >= 3 ? d[d.size() - 3] : 1); c++) {
-                    values.at(a, b, c) = arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
-                }
-            }
-        }
-        return Tensor<T>(d, values);
+        auto emptyTensor = Tensor<T>(d, createValuesContainer<T>(d));
+        return emptyTensor.template Transform<T>(
+                [&d, &fill](const arma::Mat<T> &) {
+                    if (d.size() == 0) {
+                        return arma::Mat<T>();
+                    } else if (d.size() == 1) {
+                        return arma::Mat<T>(d[0], 1, fill);
+                    } else {
+                        return arma::Mat<T>(d[d.size() - 2], d[d.size() - 1], fill);
+                    }
+                });
     }
 
     static Tensor<T> init(TensorInitializer<T> initializer) {
@@ -215,108 +223,7 @@ private:
     arma::field<arma::Mat<T>> values;
 };
 
-
-template<typename T>
-TensorConstView<T>::TensorConstView(const Tensor<T> &_ref, std::vector<int> _indices)
-        : ref(_ref), fixed(_indices.size()), indices() {
-    ensure(_indices.size() <= 3);
-    int shift = 3 - (int) _indices.size();
-    for (int i = 0; i < 3; i++) {
-        indices[i] = i >= shift ? _indices[i - shift] : 0;
-    }
-}
-
-template<typename T>
-TensorConstView<T> TensorConstView<T>::View(int id) const {
-    ensure(fixed + 1 <= ref.Rank());
-    auto new_indices = indices;
-    new_indices.push_back(id);
-    return TensorConstView<T>(ref, new_indices);
-}
-
-template<typename T>
-TensorConstView<T> TensorConstView<T>::View(int x, int y) const {
-    ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = TensorDimensions();
-    for (int i = 3 - fixed; i < 3; i++) {
-        new_indices.push_back(indices[i]);
-    }
-    new_indices.push_back(x);
-    new_indices.push_back(y);
-    return TensorConstView<T>(ref, new_indices);
-}
-
-template<typename T>
-const arma::Mat<T> &TensorConstView<T>::Matrix() const {
-    ensure(fixed + 2 >= ref.Rank() && fixed <= ref.Rank());
-    return ref.values.at(indices[0], indices[1], indices[2]);
-}
-
-template<typename T>
-const T &TensorConstView<T>::At(int x, int y) const {
-    return Matrix().at(x, y);
-}
-
-template<typename T>
-TensorView<T>::TensorView(Tensor<T> &_ref, TensorDimensions _indices) : ref(_ref), fixed(_indices.size()), indices() {
-    ensure(_indices.size() <= 3);
-    int shift = 3 - (int) _indices.size();
-    for (int i = 0; i < 3; i++) {
-        indices[i] = i >= shift ? _indices[i - shift] : 0;
-    }
-}
-
-template<typename T>
-TensorView<T> TensorView<T>::View(int id) const {
-    ensure(fixed + 1 <= ref.Rank());
-    auto new_indices = indices;
-    new_indices.push_back(id);
-    return TensorView<T>(ref, new_indices);
-}
-
-template<typename T>
-TensorView<T> TensorView<T>::View(int x, int y) const {
-    ensure(fixed + 2 <= ref.Rank());
-    auto new_indices = TensorDimensions();
-    for (int i = 3 - fixed; i < 3; i++) {
-        new_indices.push_back(indices[i]);
-    }
-    new_indices.push_back(x);
-    new_indices.push_back(y);
-    return TensorView<T>(ref, new_indices);
-}
-
-template<typename T>
-arma::Mat<T> &TensorView<T>::Matrix() {
-    ensure(fixed + 2 == ref.Rank() || fixed + 1 == ref.Rank());
-    return ref.values.at(indices[0], indices[1], indices[2]);
-}
-
-template<typename T>
-const arma::Mat<T> &TensorView<T>::Matrix() const {
-    ensure(fixed + 2 == ref.Rank() || fixed + 1 == ref.Rank());
-    return ref.values.at(indices[0], indices[1], indices[2]);
-}
-
-template<typename T>
-T &TensorView<T>::At(int x, int y) {
-    return Matrix().at(x, y);
-}
-
-template<typename T>
-const T &TensorView<T>::At(int x, int y) const {
-    return Matrix().at(x, y);
-}
-
 template<typename T>
 std::string FormatDimensions(const Tensor<T> &t) {
-    auto d = t.D;
-    auto result = std::string();
-    for (size_t i = 0; i < d.size(); i++) {
-        if (i != 0) {
-            result += " x ";
-        }
-        result += std::to_string(d[i]);
-    }
-    return result;
+    return FormatDimensions(t.D);
 }

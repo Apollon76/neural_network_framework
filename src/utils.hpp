@@ -24,13 +24,25 @@ constexpr void ensure(bool value) {
 }
 
 template<typename T>
+std::string FormatDimensions(const std::vector<T> &d) {
+    auto result = std::string();
+    for (size_t i = 0; i < d.size(); i++) {
+        if (i != 0) {
+            result += " x ";
+        }
+        result += std::to_string(d[i]);
+    }
+    return result;
+}
+
+template<typename T>
 std::string FormatDimensions(const arma::Mat<T> &mat) {
-    return std::to_string(mat.n_rows) + "x" + std::to_string(mat.n_cols);
+    return FormatDimensions({mat.n_rows, mat.n_cols});
 }
 
 template<typename T>
 std::string FormatDimensions(const arma::Cube<T> &cube) {
-    return std::to_string(cube.n_rows) + "x" + std::to_string(cube.n_cols) + "x" + std::to_string(cube.n_slices);
+    return FormatDimensions({cube.n_rows, cube.n_cols, cube.n_slices});
 }
 
 class Timer {

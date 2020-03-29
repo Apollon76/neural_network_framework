@@ -12,6 +12,8 @@
 #include <src/optimizer.hpp>
 #include <src/utils.hpp>
 #include <src/layers/dense.hpp>
+#include <src/layers/flatten.hpp>
+#include <src/layers/convolution2d.hpp>
 #include <src/os_utils.hpp>
 #include <src/tensor.hpp>
 
@@ -54,7 +56,23 @@ void Sample() {
 NeuralNetwork<double> BuildMnistNN(std::unique_ptr<IOptimizer<double>> optimizer) {
     auto neural_network = NeuralNetwork<double>(std::move(optimizer),
                                                 std::make_unique<CategoricalCrossEntropyLoss<double>>());
-    neural_network.AddLayer(std::make_unique<DenseLayer<double>>(784, 100))
+    neural_network
+            .AddLayer(std::make_unique<DenseLayer<double>>(784, 100))
+            .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())
+            .AddLayer(std::make_unique<DenseLayer<double>>(100, 10))
+            .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
+
+    return neural_network;
+}
+
+NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optimizer) {
+    auto neural_network = NeuralNetwork<double>(std::move(optimizer),
+                                                std::make_unique<CategoricalCrossEntropyLoss<double>>());
+    neural_network
+            .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, 1, 3, 3, ConvolutionPadding::Same))
+            .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
+            .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, 1, 28, 28}))
+            .AddLayer(std::make_unique<DenseLayer<double>>(784 * 1, 100))
             .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())
             .AddLayer(std::make_unique<DenseLayer<double>>(100, 10))
             .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
@@ -98,6 +116,36 @@ void DigitRecognizer(const std::string &data_path, const std::string &output,
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNN(std::move(optimizer));
+    FitNN(&neural_network, 40, x_train, y_train);
+
+    auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
+    std::cout << "Final train score: " << train_score << std::endl;
+
+    arma::ucolvec predictions = arma::index_max(neural_network.Predict(x_test).Values(), 1);
+    std::string predictions_path = data_path + "/kaggle-digit-recognizer/" + output;
+    nn_framework::io::CsvWriter writer(predictions_path);
+    writer.WriteRow({"ImageId", "Label"});
+    for (arma::u64 i = 0; i < predictions.n_rows; i++) {
+        writer.WriteRow({i + 1, predictions.at(i, 0)});
+    }
+    std::cout << "Predictions written to " << predictions_path << std::endl;
+}
+
+void DigitRecognizerConv(const std::string &data_path, const std::string &output,
+                         std::unique_ptr<IOptimizer<double>> optimizer) {
+    auto[x_train_raw, y_train] = LoadMnist(data_path + "/kaggle-digit-recognizer/train.csv", true);
+    auto x_test_raw = LoadMnistX(data_path + "/kaggle-digit-recognizer/test.csv", true);
+
+    auto train_reshaper = FlattenLayer<double>({x_train_raw.D[0], 1, 28, 28});
+    auto test_reshaper = FlattenLayer<double>({x_test_raw.D[0], 1, 28, 28});
+
+    auto x_train = train_reshaper.PullGradientsBackward(Tensor<double>(), x_train_raw).input_gradients;
+    auto x_test = train_reshaper.PullGradientsBackward(Tensor<double>(), x_test_raw).input_gradients;
+
+    std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
+    LOG(INFO) << "Start digit-recognizer neural network...";
+
+    auto neural_network = BuildMnistNNConv(std::move(optimizer));
     FitNN(&neural_network, 40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
@@ -199,6 +247,8 @@ int main(int argc, char **argv) {
 
     //MnistPng(data_path + "/data", false);
     //Mnist(data_path + "/data");
-    DigitRecognizerValidation(data_path + "/data", std::make_unique<RMSPropOptimizer<double>>(0.01));
+//    DigitRecognizerValidation(data_path + "/data", std::make_unique<RMSPropOptimizer<double>>(0.01));
+//    DigitRecognizerConv(data_path + "/data", data_path + "/output", std::make_unique<RMSPropOptimizer<double>>(0.01));
+    DigitRecognizer(data_path + "/data", data_path + "/output", std::make_unique<RMSPropOptimizer<double>>(0.01));
     return 0;
 }

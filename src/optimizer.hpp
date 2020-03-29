@@ -19,15 +19,19 @@ template<typename T>
 class Optimizer : public IOptimizer<T> {
 public:
     Optimizer() {}
+
     explicit Optimizer(double _learning_rate) : learning_rate(_learning_rate) {}
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
         UNUSED(layer)
-        return Tensor<T>(gradients.D, -gradients.Values() * learning_rate);
+        return gradients.template Transform<T>([this](const arma::Mat<T> &v) {
+            arma::Mat<T> value = -v * learning_rate;
+            return value;
+        });
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate);
     }
 
@@ -42,6 +46,7 @@ template<typename T>
 class MomentumOptimizer : public IOptimizer<T> {
 public:
     MomentumOptimizer() {}
+
     explicit MomentumOptimizer(double _learning_rate, double _momentum)
             : learning_rate(_learning_rate), momentum(_momentum) {
     }
@@ -58,7 +63,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, momentum);
     }
 
@@ -81,20 +86,27 @@ public:
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
         auto it = previous_mean.find(layer);
-        arma::Mat<T> previous_gradient;
+        Tensor<T> previous_gradient;
         if (it == previous_mean.end()) {
-            previous_gradient.zeros(arma::size(gradients.Values()));
+            previous_gradient = Tensor<T>::filled(gradients.D, arma::fill::zeros);
         } else {
             previous_gradient = it->second;
         }
 
-        auto currentMean = previous_mean[layer]
-                                   = rho * previous_gradient + (1 - rho) * arma::square(gradients.Values());
-        return Tensor<T>(gradients.D, -learning_rate * (gradients.Values() / arma::sqrt(currentMean + epsilon)));
+        auto currentMean = previous_mean[layer] = previous_gradient.template DiffWith<T>(
+                gradients, [this](const arma::Mat<T> &a,
+                                  const arma::Mat<T> &b) {
+                    arma::Mat<T> result = rho * a + (1 - rho) * arma::square(b);
+                    return result;
+                });
+        return gradients.template DiffWith<T>(currentMean, [this](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+            arma::Mat<T> result = -learning_rate * (a / arma::sqrt(b + epsilon));
+            return result;
+        });
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, rho, epsilon);
     }
 
@@ -103,7 +115,7 @@ private:
     double rho;
     double epsilon;
 
-    std::unordered_map<const ILayer<T> *, arma::Mat<T>> previous_mean;
+    std::unordered_map<const ILayer<T> *, Tensor<T>> previous_mean;
 };
 
 CEREAL_REGISTER_TYPE(RMSPropOptimizer<double>)
@@ -132,7 +144,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, beta_1, beta_2, epsilon);
     }
 
