@@ -90,7 +90,7 @@ public:
               values(_values) {}
 
     template<typename TNew>
-    Tensor<TNew> ForEach(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
+    Tensor<TNew> Transform(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
         auto newValues = createValuesContainer<TNew>(D);
         for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
             for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
@@ -103,8 +103,38 @@ public:
     }
 
     template<typename TNew>
+    TNew Aggregate(TNew initial, const std::function<void(TNew &, const arma::Mat<T> &)> &f) const {
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    f(initial, values.at(a, b, c));
+                }
+            }
+        }
+        return initial;
+    }
+
+    template<typename TNew>
+    Tensor<TNew> DiffWith(
+            const Tensor<T> &other,
+            const std::function<arma::Mat<TNew>(const arma::Mat<T> &, const arma::Mat<T> &)> &f
+    ) const {
+        ensure(D == other.D, "dimensions must be equal");
+        auto newValues = createValuesContainer<TNew>(D);
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    newValues.at(a, b, c) = f(values.at(a, b, c), other.values.at(a, b, c));
+                }
+            }
+        }
+        // todo (sivukhin): fix dimension here
+        return Tensor<TNew>(D, newValues);
+    }
+
+    template<typename TNew>
     Tensor<TNew> ConvertTo() const {
-        return ForEach<TNew>([](const arma::Mat<T> &e) {
+        return Transform<TNew>([](const arma::Mat<T> &e) {
             return arma::conv_to<arma::Mat<TNew>>::from(e);
         });
     }
@@ -153,7 +183,7 @@ public:
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randn>>::value != 0 ||
                       std::is_same<FillType, arma::fill::fill_class<arma::fill::fill_randu>>::value != 0);
         auto emptyTensor = Tensor<T>(d, createValuesContainer<T>(d));
-        return emptyTensor.template ForEach<T>(
+        return emptyTensor.template Transform<T>(
                 [&d, &fill](const arma::Mat<T> &) {
                     return arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
                 });

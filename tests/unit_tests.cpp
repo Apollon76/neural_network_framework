@@ -195,6 +195,26 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
             1e-1);
 }
 
+TEST(NeuralNetworkTest, TestConvolutionDependency) {
+    auto network = NeuralNetwork<double>(
+            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
+    );
+    network.AddLayer(std::make_unique<Convolution2dLayer<double>>(3, 2, 2, 2, ConvolutionPadding::Same));
+    auto expected_layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
+    auto inputs = Tensor<double>::filled({10, 3, 5, 5}, arma::fill::randu);
+    auto outputs = expected_layer.Apply(inputs);
+    for (int i = 0; i < 1000; i++) {
+        auto loss = network.Fit(inputs, outputs);
+        DLOG(INFO) << "Loss: " << loss;
+        DLOG(INFO) << "Weights: " << (dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights().ToString());
+    }
+    TENSOR_SHOULD_BE_EQUAL_TO(
+            dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights(),
+            expected_layer.GetWeights(),
+            1e-1
+    );
+}
+
 TEST(MSETest, TestLoss) {
     auto loss = MSELoss<double>();
     ASSERT_DOUBLE_EQ(loss.GetLoss(Tensor<double>::init({{1, 2, 3}}), Tensor<double>::init({{5, 9, -1}})),
@@ -342,7 +362,7 @@ TEST(Convolution2dLayerTest, TestApply) {
                             for (int dy = 0; dy < 2; dy++) {
                                 if (x + dx < 5 && y + dy < 5) {
                                     result += input.Field()(batch, input_channel)(x + dx, y + dy) *
-                                              layer.Weights().Field()(filter, input_channel)(dx, dy);
+                                              layer.GetWeights().Field()(filter, input_channel)(dx, dy);
                                 }
                             }
                         }
@@ -380,9 +400,9 @@ TEST(Convolution2dLayerTest, TestApplyGradient) {
                             }
                     }
             });
-    arma::field<arma::Mat<double>> weights = layer.Weights().Field();
+    arma::field<arma::Mat<double>> weights = layer.GetWeights().Field();
     layer.ApplyGradients(gradients);
-    TENSOR_SHOULD_BE_EQUAL_TO(layer.Weights(), Tensor<double>::init(
+    TENSOR_SHOULD_BE_EQUAL_TO(layer.GetWeights(), Tensor<double>::init(
             {
                     {
                             {
@@ -431,7 +451,7 @@ TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
                                         input.Field()(batch, input_channel)(x, y) / 3;
                                 expected_input_grad.Field()(batch, input_channel)(x, y) +=
                                         output_gradients.Field()(batch, filter)(x + dx, y + dy) *
-                                        layer.Weights().Field()(filter, input_channel)(dx, dy) / 3;
+                                        layer.GetWeights().Field()(filter, input_channel)(dx, dy) / 3;
                             }
                         }
                     }

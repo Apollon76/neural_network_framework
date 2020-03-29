@@ -20,7 +20,7 @@ public:
               padding(_padding) {
     }
 
-    const Tensor<T> &Weights() const {
+    const Tensor<T> &GetWeights() const {
         return weights;
     }
 
