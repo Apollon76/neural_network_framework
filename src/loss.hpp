@@ -19,11 +19,11 @@ template<typename T>
 class MSELoss : public ILoss<T> {
 public:
     [[nodiscard]] double GetLoss(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
-        return arma::accu(arma::pow(inputs.Values() - outputs.Values(), 2)) / inputs.BatchCount();
+        return arma::accu(arma::pow(inputs.Values() - outputs.Values(), 2)) / inputs.D[0];
     }
 
     [[nodiscard]] Tensor<T> GetGradients(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
-        return Tensor<T>(inputs.D, 2 * (inputs.Values() - outputs.Values()) / inputs.BatchCount());
+        return Tensor<T>(inputs.D, 2 * (inputs.Values() - outputs.Values()) / inputs.D[0]);
     }
 
     template<class Archive>

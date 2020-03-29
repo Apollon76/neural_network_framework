@@ -42,7 +42,7 @@ public:
                     // todo (sivukhin): use ConvolutionPadding here
                     layer += arma::conv2(input.Values(), weights.Values(), "same");
                 }
-                result.View().View(batch, filter).Matrix() = layer / weights.D[1];
+                result.Field().at(batch, filter) = layer / weights.D[1];
             }
         }
         return result;
@@ -57,8 +57,8 @@ public:
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                    auto inputImage = input.ConstView().View(batch, input_channel).Matrix();
-                    auto outputGradients = output_gradients.ConstView().View(batch, filter).Matrix();
+                    auto inputImage = input.Field().at(batch, input_channel);
+                    auto outputGradients = output_gradients.Field().at(batch, filter);
                     for (int w = 0; w < weights.D[2]; w++) {
                         for (int h = 0; h < weights.D[3]; h++) {
                             auto grad = arma::accu(
@@ -66,7 +66,7 @@ public:
                                                       inputImage.n_cols - 1) %
                                     outputGradients.submat(0, outputGradients.n_rows - weights.D[2],
                                                            0, outputGradients.n_cols - weights.D[3]));
-                            weightsGradients.View().View(filter, input_channel).At(w, h) += grad / weights.D[1];
+                            weightsGradients.Field().at(filter, input_channel).at(w, h) += grad / weights.D[1];
                         }
                     }
                 }
@@ -81,9 +81,7 @@ public:
     void ApplyGradients(const Tensor<T> &gradients) override {
         for (int filter = 0; filter < weights.D[0]; filter++) {
             for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
-                weights.View().View(filter, input_channel).Matrix() += gradients
-                        .ConstView()
-                        .View(filter, input_channel).Matrix();
+                weights.Field().at(filter, input_channel) += gradients.Field().at(filter, input_channel);
             }
         }
     }
