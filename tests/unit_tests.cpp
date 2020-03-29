@@ -3,6 +3,7 @@
 #include <src/layers/activations.hpp>
 #include <src/layers/dense.hpp>
 #include <src/layers/convolution2d.hpp>
+#include <src/layers/flatten.hpp>
 #include <src/neural_network.hpp>
 #include <src/optimizer.hpp>
 #include "utils.h"
@@ -486,9 +487,52 @@ TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
     TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, expected_layer_grad);
 }
 
-TEST(Convolution2dLayerTest, TestSerialization) {
-
+TEST(FlattenLayerTest, TestApply) {
+    auto flatten = FlattenLayer<double>({2, 2, 2, 2});
+    auto tensor = Tensor<double>::init(
+            {
+                    {
+                            {{1, 2},  {3,  4}},
+                            {{5,  6},  {7,  8}}
+                    },
+                    {
+                            {{9, 10}, {11, 12}},
+                            {{13, 14}, {15, 16}}
+                    }
+            }
+    );
+    auto flattened = flatten.Apply(tensor);
+    TENSOR_SHOULD_BE_EQUAL_TO(flattened, Tensor<double>::init(
+            {
+                    {1, 2,  3,  4,  5,  6,  7,  8},
+                    {9, 10, 11, 12, 13, 14, 15, 16}
+            })
+    );
 }
+
+TEST(FlattenLayerTest, TestPullGradientsBackward) {
+    auto flatten = FlattenLayer<double>({2, 2, 2, 2});
+    auto flattened = Tensor<double>::init(
+            {
+                    {1, 2,  3,  4,  5,  6,  7,  8},
+                    {9, 10, 11, 12, 13, 14, 15, 16}
+            });
+    auto tensor = flatten.PullGradientsBackward(Tensor<double>(), flattened);
+    TENSOR_SHOULD_BE_EQUAL_TO(tensor.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(tensor.input_gradients, Tensor<double>::init(
+            {
+                    {
+                            {{1, 2},  {3,  4}},
+                            {{5,  6},  {7,  8}}
+                    },
+                    {
+                            {{9, 10}, {11, 12}},
+                            {{13, 14}, {15, 16}}
+                    }
+            }
+    ));
+}
+
 
 TEST(ArmaConvolutionTest, TestValid) {
     auto image = arma::mat(3, 3, arma::fill::randu);

@@ -89,28 +89,41 @@ public:
             : D(std::move(_dimensions)),
               values(_values) {}
 
-    template<typename TNew>
-    Tensor<TNew> Transform(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
-        auto newValues = createValuesContainer<TNew>(D);
+
+    void ForEach(const std::function<void(int, int, int, arma::Mat<T> &)> &f) {
         for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
             for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
                 for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
-                    newValues.at(a, b, c) = f(values.at(a, b, c));
+                    f(a, b, c, values.at(a, b, c));
                 }
             }
         }
-        return Tensor<TNew>(D, newValues);
+    }
+
+    void ForEach(const std::function<void(int, int, int, const arma::Mat<T> &)> &f) const {
+        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
+            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
+                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
+                    f(a, b, c, values.at(a, b, c));
+                }
+            }
+        }
+    }
+
+    template<typename TNew>
+    Tensor<TNew> Transform(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
+        auto newValues = Tensor<TNew>(D, createValuesContainer<TNew>(D));
+        newValues.ForEach([&f, this](int a, int b, int c, arma::Mat<T> &value) {
+            value = f(values.at(a, b, c));
+        });
+        return newValues;
     }
 
     template<typename TNew>
     TNew Aggregate(TNew initial, const std::function<void(TNew &, const arma::Mat<T> &)> &f) const {
-        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
-            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
-                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
-                    f(initial, values.at(a, b, c));
-                }
-            }
-        }
+        ForEach([&initial, &f](int, int, int, const arma::Mat<T> &v) {
+            f(initial, v);
+        });
         return initial;
     }
 
@@ -120,16 +133,12 @@ public:
             const std::function<arma::Mat<TNew>(const arma::Mat<T> &, const arma::Mat<T> &)> &f
     ) const {
         ensure(D == other.D, "dimensions must be equal");
-        auto newValues = createValuesContainer<TNew>(D);
-        for (int a = 0; a < (D.size() >= 3 ? D[0] : 1); a++) {
-            for (int b = 0; b < (D.size() >= 4 ? D[1] : 1); b++) {
-                for (int c = 0; c < (D.size() >= 5 ? D[2] : 1); c++) {
-                    newValues.at(a, b, c) = f(values.at(a, b, c), other.values.at(a, b, c));
-                }
-            }
-        }
+        auto newValues = Tensor<TNew>(D, createValuesContainer<TNew>(D));
+        newValues.ForEach([&f, this, &other](int a, int b, int c, arma::Mat<T> &v) {
+            v = f(values.at(a, b, c), other.values.at(a, b, c));
+        });
         // todo (sivukhin): fix dimension here
-        return Tensor<TNew>(D, newValues);
+        return newValues;
     }
 
     template<typename TNew>
