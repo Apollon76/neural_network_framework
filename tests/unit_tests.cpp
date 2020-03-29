@@ -488,7 +488,7 @@ TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
 }
 
 TEST(FlattenLayerTest, TestApply) {
-    auto flatten = FlattenLayer<double>({2, 2, 2, 2});
+    auto flatten = FlattenLayer<double>({0, 2, 2, 2});
     auto tensor = Tensor<double>::init(
             {
                     {
@@ -511,7 +511,7 @@ TEST(FlattenLayerTest, TestApply) {
 }
 
 TEST(FlattenLayerTest, TestPullGradientsBackward) {
-    auto flatten = FlattenLayer<double>({2, 2, 2, 2});
+    auto flatten = FlattenLayer<double>({0, 2, 2, 2});
     auto flattened = Tensor<double>::init(
             {
                     {1, 2,  3,  4,  5,  6,  7,  8},

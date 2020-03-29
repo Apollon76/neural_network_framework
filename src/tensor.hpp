@@ -113,7 +113,7 @@ public:
     template<typename TNew>
     Tensor<TNew> Transform(const std::function<arma::Mat<TNew>(const arma::Mat<T> &)> &f) const {
         auto newValues = Tensor<TNew>(D, createValuesContainer<TNew>(D));
-        newValues.ForEach([&f, this](int a, int b, int c, arma::Mat<T> &value) {
+        newValues.ForEach([&f, this](int a, int b, int c, arma::Mat<TNew> &value) {
             value = f(values.at(a, b, c));
         });
         return newValues;
@@ -194,7 +194,13 @@ public:
         auto emptyTensor = Tensor<T>(d, createValuesContainer<T>(d));
         return emptyTensor.template Transform<T>(
                 [&d, &fill](const arma::Mat<T> &) {
-                    return arma::Mat<T>(d[d.size() - 2], d.size() == 1 ? 1 : d.back(), fill);
+                    if (d.size() == 0) {
+                        return arma::Mat<T>();
+                    } else if (d.size() == 1) {
+                        return arma::Mat<T>(d[0], 1, fill);
+                    } else {
+                        return arma::Mat<T>(d[d.size() - 2], d[d.size() - 1], fill);
+                    }
                 });
     }
 

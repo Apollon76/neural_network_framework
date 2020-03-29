@@ -25,7 +25,6 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
-        ensure(input.D == input_dim, "Unexpected input dimension in flatten layer");
         auto rows = input.D[0];
         auto cols = std::accumulate(input.D.begin() + 1, input.D.end(), 1, std::multiplies<T>());
         auto tensor = Tensor<T>(
@@ -45,13 +44,14 @@ public:
             const Tensor<T> &,
             const Tensor<T> &output_gradients
     ) const override {
-        ensure(input_dim[0] == output_gradients.D[0], "Batch dimensions doesn't match for flatten layer");
-        auto rows = input_dim[0];
+        auto rows = output_gradients.D[0];
+        std::vector<int> current_dim = input_dim;
+        current_dim[0] = rows;
         int h = input_dim[input_dim.size() - 2];
         int w = input_dim[input_dim.size() - 1];
         auto tensor = Tensor<T>(
-                input_dim,
-                createValuesContainer<T>(input_dim)
+                current_dim,
+                createValuesContainer<T>(current_dim)
         );
         auto offsets = std::vector<int>(rows);
         tensor.ForEach([h, w, &offsets, &output_gradients](int a, int, int, arma::Mat<T> &v) {

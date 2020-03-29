@@ -86,16 +86,23 @@ public:
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
         auto it = previous_mean.find(layer);
-        arma::Mat<T> previous_gradient;
+        Tensor<T> previous_gradient;
         if (it == previous_mean.end()) {
-            previous_gradient.zeros(arma::size(gradients.Values()));
+            previous_gradient = Tensor<T>::filled(gradients.D, arma::fill::zeros);
         } else {
             previous_gradient = it->second;
         }
 
-        auto currentMean = previous_mean[layer]
-                                   = rho * previous_gradient + (1 - rho) * arma::square(gradients.Values());
-        return Tensor<T>(gradients.D, -learning_rate * (gradients.Values() / arma::sqrt(currentMean + epsilon)));
+        auto currentMean = previous_mean[layer] = previous_gradient.template DiffWith<T>(
+                gradients, [this](const arma::Mat<T> &a,
+                                  const arma::Mat<T> &b) {
+                    arma::Mat<T> result = rho * a + (1 - rho) * arma::square(b);
+                    return result;
+                });
+        return gradients.template DiffWith<T>(currentMean, [this](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+            arma::Mat<T> result = -learning_rate * (a / arma::sqrt(b + epsilon));
+            return result;
+        });
     }
 
     template<class Archive>
@@ -108,7 +115,7 @@ private:
     double rho;
     double epsilon;
 
-    std::unordered_map<const ILayer<T> *, arma::Mat<T>> previous_mean;
+    std::unordered_map<const ILayer<T> *, Tensor<T>> previous_mean;
 };
 
 CEREAL_REGISTER_TYPE(RMSPropOptimizer<double>)
