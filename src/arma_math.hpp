@@ -46,3 +46,8 @@ arma::Mat<T> Conv2d(const arma::Mat<T> &matrix, const arma::Mat<T> &kernel, Conv
     }
     return result;
 }
+
+template<typename T>
+arma::Mat<T> Mirror(const arma::Mat<T> &matrix) {
+    return arma::fliplr(arma::flipud(matrix));
+}

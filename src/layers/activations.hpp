@@ -20,19 +20,22 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
-        return Tensor<T>(input.D, 1 / (1 + arma::exp(-input.Values())));
+        return input.template Transform<T>([](const arma::Mat<T> &v) {
+            arma::Mat<T> value = 1 / (1 + arma::exp(-v));
+            return value;
+        });
     }
 
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
     ) const override {
-        auto activation_result = Apply(inputs);
+        auto activation = Apply(inputs);
         return Gradients<T>{
-                Tensor<T>(
-                        inputs.D,
-                        output_gradients.Values() % ((activation_result.Values()) % (1 - activation_result.Values()))
-                ),
+                output_gradients.template DiffWith<T>(activation, [](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+                    arma::Mat<T> value = a % (b % (1 - b));
+                    return value;
+                }),
                 Tensor<T>()
         };
     }
@@ -40,7 +43,7 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 CEREAL_REGISTER_TYPE(SigmoidActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, SigmoidActivationLayer<double>)
@@ -87,7 +90,7 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 CEREAL_REGISTER_TYPE(SoftmaxActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, SoftmaxActivationLayer<double>)
@@ -133,7 +136,7 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 CEREAL_REGISTER_TYPE(ReLUActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, ReLUActivationLayer<double>)
@@ -173,7 +176,7 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 CEREAL_REGISTER_TYPE(TanhActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, TanhActivationLayer<double>)

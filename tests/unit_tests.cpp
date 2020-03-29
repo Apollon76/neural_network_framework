@@ -197,22 +197,45 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
 
 TEST(NeuralNetworkTest, TestConvolutionDependency) {
     auto network = NeuralNetwork<double>(
-            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
+            std::make_unique<Optimizer<double>>(0.1), std::make_unique<MSELoss<double>>()
     );
     network.AddLayer(std::make_unique<Convolution2dLayer<double>>(3, 2, 2, 2, ConvolutionPadding::Same));
     auto expected_layer = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
     auto inputs = Tensor<double>::filled({10, 3, 5, 5}, arma::fill::randu);
     auto outputs = expected_layer.Apply(inputs);
+    double loss = 0;
     for (int i = 0; i < 1000; i++) {
-        auto loss = network.Fit(inputs, outputs);
-        DLOG(INFO) << "Loss: " << loss;
-        DLOG(INFO) << "Weights: " << (dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights().ToString());
+        loss = network.Fit(inputs, outputs);
     }
+    EXPECT_LE(loss, 1e-8);
     TENSOR_SHOULD_BE_EQUAL_TO(
             dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights(),
             expected_layer.GetWeights(),
             1e-1
     );
+}
+
+TEST(NeuralNetworkTest, TestComplexConvolutionDependency) {
+    auto network = NeuralNetwork<double>(
+            std::make_unique<Optimizer<double>>(0.1), std::make_unique<MSELoss<double>>()
+    );
+    network.AddLayer(std::make_unique<Convolution2dLayer<double>>(3, 2, 2, 2, ConvolutionPadding::Same));
+    network.AddLayer(std::make_unique<SigmoidActivationLayer<double>>());
+    network.AddLayer(std::make_unique<Convolution2dLayer<double>>(2, 4, 3, 3, ConvolutionPadding::Same));
+    network.AddLayer(std::make_unique<SigmoidActivationLayer<double>>());
+    auto expected_layer_1 = Convolution2dLayer<double>(3, 2, 2, 2, ConvolutionPadding::Same);
+    auto expected_layer_2 = SigmoidActivationLayer<double>();
+    auto expected_layer_3 = Convolution2dLayer<double>(2, 4, 3, 3, ConvolutionPadding::Same);
+    auto expected_layer_4 = SigmoidActivationLayer<double>();
+    auto inputs = Tensor<double>::filled({50, 3, 7, 7}, arma::fill::randu);
+    auto outputs = expected_layer_4.Apply(
+            expected_layer_3.Apply(expected_layer_2.Apply(expected_layer_1.Apply(inputs)))
+    );
+    double loss = 0;
+    for (int i = 0; i < 400; i++) {
+        loss = network.Fit(inputs, outputs);
+    }
+    EXPECT_LE(loss, 0.01);
 }
 
 TEST(MSETest, TestLoss) {
@@ -270,7 +293,7 @@ TEST(TanhActivationLayerTest, TestTanhLayer) {
                     {-0.7615942, -0.9640276, -0.9950548}
             });
     TENSOR_SHOULD_BE_EQUAL_TO(layer.Apply(input_batch), expected,
-                              1e-6
+                              1e-4
     );
 
     auto output_gradients = Tensor<double>::init(
@@ -285,7 +308,7 @@ TEST(TanhActivationLayerTest, TestTanhLayer) {
                     {-4.199743, -1.4130175, -0.29598176}
             });
     TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
-    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients, 1e-6);
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients, 1e-4);
 }
 
 TEST(MomentumOptimizerTest, TestDifferentLayers) {
@@ -322,11 +345,11 @@ TEST(RMSPropOptimizerTest, TestRMSPropGradientStep) {
     auto thirdGradientStep = optimizer.GetGradientStep(Tensor<double>::init({10000, 2, 3}), &layer);
 
     TENSOR_SHOULD_BE_EQUAL_TO(firstGradientStep, Tensor<double>::init({-0.5270463, -0.5270463, -0.5270463}),
-                              1e-6);
+                              1e-4);
     TENSOR_SHOULD_BE_EQUAL_TO(secondGradientStep, Tensor<double>::init({-0.526783, -0.526782, -0.526782}),
-                              1e-6);
+                              1e-4);
     TENSOR_SHOULD_BE_EQUAL_TO(thirdGradientStep, Tensor<double>::init({-0.5270462, -0.1588382, -0.158838}),
-                              1e-6);
+                              1e-4);
 }
 
 TEST(AdamOptimizerTest, TestAdamGradientStep) {
@@ -445,12 +468,12 @@ TEST(Convolution2dLayerTest, TestPullGradientsBackward) {
                                 if (x + dx >= 5 || y + dy >= 5) {
                                     continue;
                                 }
-                                // output[batch, filter, x + dx, y + dy] += input[batch, input_channel, x, y] * w[filter, input_channel, dx, dy] / input_channels
+                                // output[batch, filter, x, y] += input[batch, input_channel, x + dx, y + dy] * w[filter, input_channel, dx, dy] / input_channels
                                 expected_layer_grad.Field()(filter, input_channel)(dx, dy) +=
-                                        output_gradients.Field()(batch, filter)(x + dx, y + dy) *
-                                        input.Field()(batch, input_channel)(x, y) / 3;
-                                expected_input_grad.Field()(batch, input_channel)(x, y) +=
-                                        output_gradients.Field()(batch, filter)(x + dx, y + dy) *
+                                        output_gradients.Field()(batch, filter)(x, y) *
+                                        input.Field()(batch, input_channel)(x + dx, y + dy) / 3;
+                                expected_input_grad.Field()(batch, input_channel)(x + dx, y + dy) +=
+                                        output_gradients.Field()(batch, filter)(x, y) *
                                         layer.GetWeights().Field()(filter, input_channel)(dx, dy) / 3;
                             }
                         }

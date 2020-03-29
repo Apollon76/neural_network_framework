@@ -50,6 +50,8 @@ public:
         Tensor<T> last_output_gradient = loss->GetGradients(inter_outputs.back(), output);
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; i--) {
             DLOG(INFO) << "Propagate gradients backward for layer: " << layers[i]->GetName();
+            DLOG(INFO) << "Inputs: " << std::endl << inter_outputs[i].ToString() << std::endl
+                       << "Gradients: " << std::endl << last_output_gradient.ToString();
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], last_output_gradient);
             DLOG(INFO) << "Found gradients: "
                        << gradients.input_gradients.ToString() << std::endl

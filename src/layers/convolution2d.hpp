@@ -57,8 +57,8 @@ public:
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
     ) const override {
-        auto inputGradients = Tensor<T>::filled(input.D, arma::fill::zeros);
         auto weightsGradients = Tensor<T>::filled(weights.D, arma::fill::zeros);
+        auto inputGradients = Tensor<T>::filled(input.D, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
                 for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
@@ -69,14 +69,14 @@ public:
                     for (int w = 0; w < weights.D[2]; w++) {
                         for (int h = 0; h < weights.D[3]; h++) {
                             currentWeights(w, h) += arma::accu(
-                                    inputImage.submat(0, 0, input.D[2] - w - 1, input.D[3] - h - 1) %
-                                    outputGradients.submat(w, h, input.D[2] - 1, input.D[3] - 1)
+                                    outputGradients.submat(0, 0, input.D[2] - w - 1, input.D[3] - h - 1) %
+                                    inputImage.submat(w, h, input.D[2] - 1, input.D[3] - 1)
                             ) / weights.D[1];
                         }
                     }
-                    inputGradients.Field()(batch, input_channel) += Conv2d(
-                            outputGradients, weights.Field()(filter, input_channel), ConvolutionPadding::Same
-                    ) / weights.D[1];
+                    inputGradients.Field()(batch, input_channel) += Mirror(Conv2d(
+                            Mirror(outputGradients), weights.Field()(filter, input_channel), ConvolutionPadding::Same
+                    )) / weights.D[1];
                 }
             }
         }
