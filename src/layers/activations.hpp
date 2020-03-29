@@ -124,8 +124,8 @@ public:
             const Tensor<T> &output_gradients
     ) const override {
         return Gradients<T>{
-                output_gradients.template DiffWith<T>(inputs, [](const arma::Mat<T> &a, const arma::Mat<T> &b) {
-                    auto diff = b;
+                output_gradients.template DiffWith<T>(inputs, [](const arma::Mat<T> &a, const arma::Mat<T> &b) -> arma::Mat<T> {
+                    arma::Mat<T> diff = b;
                     diff.for_each([](T &value) {
                         if (value < 0) {
                             value = 0;
