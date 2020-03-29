@@ -85,8 +85,10 @@ TEST(SerializationTest, TestSequentialModel) {
     model.AddLayer(std::make_unique<ReLUActivationLayer<double>>());
 
     std::vector<std::string> expected_names;
+    std::vector<std::string> expected_idx;
     for (size_t i = 0; i < 4; ++i) {
         expected_names.push_back(model.GetLayer(i)->GetName());
+        expected_idx.push_back(model.GetLayer(i)->GetLayerID());
     }
 
     auto filename = "model_test.json";
@@ -105,9 +107,12 @@ TEST(SerializationTest, TestSequentialModel) {
         iarchive(deserialized);
 
         std::vector<std::string> actual_names;
+        std::vector<std::string> actual_idx;
         for (size_t i = 0; i < 4; ++i) {
             actual_names.push_back(deserialized.GetLayer(i)->GetName());
+            actual_idx.push_back(deserialized.GetLayer(i)->GetLayerID());
         }
         ASSERT_EQ(actual_names, expected_names);
+        ASSERT_EQ(actual_idx, expected_idx);
     }
 }

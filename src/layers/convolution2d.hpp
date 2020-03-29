@@ -88,6 +88,10 @@ public:
         }
     }
 
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::CONV_2D;
+    }
+
 private:
     Tensor<T> weights;
     ConvolutionPadding padding;

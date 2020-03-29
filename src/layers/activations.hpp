@@ -40,7 +40,13 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &ar) {
+        ar(this->LayerID);
+    }
+
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::SIGMOID_ACTIVATION;
+    }
 };
 CEREAL_REGISTER_TYPE(SigmoidActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, SigmoidActivationLayer<double>)
@@ -86,8 +92,14 @@ public:
 
     void ApplyGradients(const Tensor<T> &) override {}
 
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::SOFTMAX_ACTIVATION;
+    }
+
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &ar) {
+        ar(this->LayerID);
+    }
 };
 CEREAL_REGISTER_TYPE(SoftmaxActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, SoftmaxActivationLayer<double>)
@@ -133,7 +145,13 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &ar) {
+        ar(this->LayerID);
+    }
+
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::RELU_ACTIVATION;
+    }
 };
 CEREAL_REGISTER_TYPE(ReLUActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, ReLUActivationLayer<double>)
@@ -173,7 +191,13 @@ public:
     void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &ar) {
+        ar(this->LayerID);
+    }
+
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::TANH_ACTIVATION;
+    }
 };
 CEREAL_REGISTER_TYPE(TanhActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, TanhActivationLayer<double>)

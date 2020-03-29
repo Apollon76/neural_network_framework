@@ -45,7 +45,9 @@ add_library(neural_network_framework SHARED
         io/filesystem.hpp
         scoring/scoring.hpp
         os_utils.hpp
-        ${PROTO_HEADER})
+        ${PROTO_HEADER}
+        layers/layers_enum.hpp
+        layers/layers_enum.cpp)
 
 target_link_libraries(neural_network_framework ${ARMADILLO_LIBRARIES} pthread glog::glog ${PROTOBUF_LIBRARY} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} stdc++fs)
 set_target_properties(neural_network_framework PROPERTIES LINKER_LANGUAGE CXX)

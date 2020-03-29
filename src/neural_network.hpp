@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <memory>
 #include <cereal/types/vector.hpp>
 
@@ -9,6 +10,34 @@
 #include "loss.hpp"
 #include "optimizer.hpp"
 #include <src/tensor.hpp>
+#include "layers/layers_enum.hpp"
+#include <layers.pb.h>
+
+class InputStream : public google::protobuf::io::CopyingInputStream, std::istream {
+private:
+    std::istream *innerStream;
+public:
+    InputStream(std::istream *innerStream): innerStream(innerStream) {}
+
+    int Read(void* buffer, int size) override {
+        return innerStream->readsome(reinterpret_cast<char*>(buffer), size);
+    }
+};
+
+
+class OutputStream : public google::protobuf::io::CopyingOutputStream, std::ostream {
+private:
+    std::ostream *innerStream;
+public:
+    OutputStream(std::ostream* innerStream): innerStream(innerStream) {}
+
+    bool Write(const void* buffer, int size) override {
+        innerStream->write(reinterpret_cast<const char*>(buffer), size);
+        return !(innerStream->rdstate() && (innerStream->failbit || innerStream->badbit));
+    }
+
+};
+
 
 template<typename T>
 class NeuralNetwork {
@@ -16,11 +45,18 @@ public:
     NeuralNetwork() = default;
 
     explicit NeuralNetwork(std::unique_ptr<IOptimizer<T>> _optimizer, std::unique_ptr<ILoss<T>> _loss)
-            : layers(), optimizer(std::move(_optimizer)), loss(std::move(_loss)) {
+            : layers(), optimizer(std::move(_optimizer)), loss(std::move(_loss)), layerByTypeCounter(LayersEnum::TOTAL) {
 
     }
 
     NeuralNetwork &AddLayer(std::unique_ptr<ILayer<T>> layer) {
+        LayersEnum layerType = layer->GetLayerType();
+        std::string layerName = GetLayerNameByType(layerType);
+
+        size_t vacantID = layerByTypeCounter[layerType]++;
+        layer->SetLayerID(layerName + "_" + std::to_string(vacantID));
+        layerId2layer[layer->GetLayerID()] = layers.size();
+
         layers.emplace_back(std::move(layer));
         return *this;
     }
@@ -77,8 +113,46 @@ public:
         ar(layers, optimizer, loss);
     }
 
+    void SaveWeights(google::protobuf::io::CopyingOutputStreamAdaptor *out) const {
+        google::protobuf::io::CodedOutputStream output(out);
+        for (auto && layer : layers) {
+            if (layer->GetLayerType() == LayersEnum::DENSE) {
+                std::stringstream layer_weights;
+                size_t layerSize = layer->SaveWeights(&layer_weights);
+                output.WriteVarint32(layer->GetLayerType());
+                output.WriteVarint32(layerSize);
+                output.WriteRaw(layer_weights.str().c_str(), layerSize);
+            }
+        }
+    }
+
+    void LoadWeights(google::protobuf::io::CopyingInputStreamAdaptor *rawInput) {
+        google::protobuf::io::CodedInputStream input(rawInput);
+
+        while (!input.ConsumedEntireMessage()) {
+            uint32_t layerTypeInt;
+            input.ReadVarint32(&layerTypeInt);
+            auto layerType = LayersEnum(layerTypeInt);
+
+            uint32_t size;
+            input.ReadVarint32(&size);
+            google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
+
+            if (layerType == LayersEnum::DENSE) {
+                DenseWeights dense;
+                dense.MergeFromCodedStream(&input);
+                if (auto it = layerId2layer.find(dense.name()); it != layerId2layer.end()) {
+                    (DenseLayer<T>(*it->second)).LoadWeights(dense);
+                }
+            }
+            input.PopLimit(limit);
+        }
+    }
+
 private:
     std::vector<std::unique_ptr<ILayer<T>>> layers;
     std::unique_ptr<IOptimizer<T>> optimizer;
     std::unique_ptr<ILoss<T>> loss;
+    std::vector<size_t> layerByTypeCounter;
+    std::unordered_map<std::string, size_t> layerId2layer;
 };

@@ -21,6 +21,10 @@ public:
         return weights_and_bias;
     }
 
+    inline LayersEnum GetLayerType() const override {
+        return LayersEnum::DENSE;
+    }
+
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
         stream << std::endl << weights_and_bias.ToString();
@@ -64,8 +68,9 @@ public:
         weights_and_bias.Values() += gradients.Values();
     }
 
-    void SaveWeights(std::ostream *out) {
+    size_t SaveWeights(std::ostream *out) override {
         DenseWeights matrix;
+        matrix.set_name(this->LayerID);
         matrix.set_n_rows(weights_and_bias.D[0]);
         matrix.set_n_cols(weights_and_bias.D[1]);
         for (int i = 0; i < weights_and_bias.D[0]; ++i) {
@@ -75,6 +80,7 @@ public:
             }
         }
         matrix.SerializeToOstream(out);
+        return matrix.ByteSizeLong();
     }
 
     void LoadWeights(std::istream *in) {
@@ -85,19 +91,33 @@ public:
                 weights_and_bias.at(i, j) = matrix.vectors(i).scalars(j);
             }
         }
+        this->LayerID = matrix.name();
+    }
+
+    void LoadWeights(const DenseWeights &matrix) {
+        for (::google::protobuf::uint32 i = 0; i < matrix.n_rows(); ++i) {
+            for (::google::protobuf::uint32 j = 0; j < matrix.n_cols(); ++j) {
+                weights_and_bias.at(i, j) = matrix.vectors(i).scalars(j);
+            }
+        }
+        this->LayerID = matrix.name();
     }
 
     template<class Archive>
     void save(Archive &ar) const {
-        ar(weights_and_bias.D[0] - 1, weights_and_bias.D[1]);
+        ar(weights_and_bias.D[0] - 1, weights_and_bias.D[1], this->LayerID);
     }
 
     template<class Archive>
     void load(Archive &archive) {
         int rows, cols;
-        archive(rows, cols);
+        std::string LayerID;
+        archive(rows, cols, LayerID);
         weights_and_bias = DenseLayer(rows, cols).weights_and_bias;
+        this->SetLayerID(LayerID);
     }
+
+
 
 private:
     Tensor<T> weights_and_bias;

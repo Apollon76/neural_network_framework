@@ -99,7 +99,7 @@ RUN useradd -u 10000 -g 10000 -m user && yes password | passwd user
 RUN mkdir /var/run/sshd
 
 # protobuf
-RUN yes | apt-get install autoconf automake libtool g++
+RUN rm -rf /tmp/protobuf
 RUN git clone https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
 WORKDIR /tmp/protobuf
 RUN git submodule update --init --recursive

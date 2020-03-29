@@ -159,6 +159,23 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
             1e-5);
 }
 
+TEST(NeuralNetworkTest, TestLayersIdx) {
+    auto network = NeuralNetwork<double>(
+            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
+    );
+    network.AddLayer(std::make_unique<DenseLayer<double>>(10, 10));
+    ASSERT_EQ(network.GetLayer(0)->GetLayerID(), "Dense_0");
+
+    network.AddLayer(std::make_unique<DenseLayer<double>>(10, 10));
+    ASSERT_EQ(network.GetLayer(1)->GetLayerID(), "Dense_1");
+
+    network.AddLayer(std::make_unique<SigmoidActivationLayer<double>>());
+    ASSERT_EQ(network.GetLayer(2)->GetLayerID(), "SigmoidActivation_0");
+
+    ASSERT_EQ(network.GetLayer(0)->GetLayerID(), "Dense_0");
+    ASSERT_EQ(network.GetLayer(1)->GetLayerID(), "Dense_1");
+}
+
 TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
     auto network = NeuralNetwork<double>(
             std::make_unique<Optimizer<double>>(0.1), std::make_unique<MSELoss<double>>()
@@ -338,4 +355,48 @@ TEST(ConsolutionLayerTest, TestApply) {
 
 TEST(ConsolutionLayerTest, TestSerialization) {
 
+}
+
+TEST(NeuralNetworkTest, SimpleSaveWeights) {
+    auto network = NeuralNetwork<double>(
+            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
+    );
+    network.AddLayer(std::make_unique<DenseLayer<double>>(1, 1));
+    auto inputs = Tensor<double>::init(
+            {
+                    {1},
+                    {5}
+            });
+    auto outputs = Tensor<double>::init(
+            {
+                    {2 * 1 + 3},
+                    {2 * 5 + 3}
+            });
+    for (int i = 0; i < 10000; i++) {
+        network.Fit(inputs, outputs);
+    }
+
+    std::stringstream stream;
+    auto outputWeightStream = OutputStream(&stream);
+    google::protobuf::io::CopyingOutputStream *output = &outputWeightStream;
+    auto out = google::protobuf::io::CopyingOutputStreamAdaptor(output);
+    network.SaveWeights(&out);
+
+    MATRIX_SHOULD_BE_EQUAL_TO(
+            dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
+            Tensor<double>::init(
+                    {
+                            {2},
+                            {3}
+                    }),
+            1e-5);
+
+    auto newNetwork = NeuralNetwork<double>(
+            std::make_unique<Optimizer<double>>(0.01), std::make_unique<MSELoss<double>>()
+    );
+
+    std::cerr << "kek";
+   auto inputWeightStream = InputStream(&stream);
+   auto a = stream.str();
+   std::cerr << a;
 }
