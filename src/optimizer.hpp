@@ -19,15 +19,19 @@ template<typename T>
 class Optimizer : public IOptimizer<T> {
 public:
     Optimizer() {}
+
     explicit Optimizer(double _learning_rate) : learning_rate(_learning_rate) {}
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
         UNUSED(layer)
-        return Tensor<T>(gradients.D, -gradients.Values() * learning_rate);
+        return gradients.template Transform<T>([this](const arma::Mat<T> &v) {
+            arma::Mat<T> value = -v * learning_rate;
+            return value;
+        });
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate);
     }
 
@@ -42,6 +46,7 @@ template<typename T>
 class MomentumOptimizer : public IOptimizer<T> {
 public:
     MomentumOptimizer() {}
+
     explicit MomentumOptimizer(double _learning_rate, double _momentum)
             : learning_rate(_learning_rate), momentum(_momentum) {
     }
@@ -58,7 +63,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, momentum);
     }
 
@@ -94,7 +99,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, rho, epsilon);
     }
 
@@ -132,7 +137,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive& ar) {
+    void serialize(Archive &ar) {
         ar(learning_rate, beta_1, beta_2, epsilon);
     }
 

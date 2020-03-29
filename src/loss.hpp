@@ -19,15 +19,23 @@ template<typename T>
 class MSELoss : public ILoss<T> {
 public:
     [[nodiscard]] double GetLoss(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
-        return arma::accu(arma::pow(inputs.Values() - outputs.Values(), 2)) / inputs.D[0];
+        auto result = inputs.template DiffWith<T>(outputs, [](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+            return arma::Mat<T>(std::vector<T>{arma::accu(arma::pow(a - b, 2))});
+        });
+        return result.template Aggregate<double>(0, [](double &sum, const arma::Mat<T> &a) {
+            sum += arma::accu(a);
+        }) / inputs.D[0];
     }
 
     [[nodiscard]] Tensor<T> GetGradients(const Tensor<T> &inputs, const Tensor<T> &outputs) const override {
-        return Tensor<T>(inputs.D, 2 * (inputs.Values() - outputs.Values()) / inputs.D[0]);
+        return inputs.template DiffWith<T>(outputs, [&inputs](const arma::Mat<T> &a, const arma::Mat<T> &b) {
+            arma::Mat<T> value = 2 * (a - b) / inputs.D[0];
+            return value;
+        });
     }
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 
 CEREAL_REGISTER_TYPE(MSELoss<double>)
@@ -45,7 +53,7 @@ public:
     }
 
     template<class Archive>
-    void serialize(Archive&) {}
+    void serialize(Archive &) {}
 };
 
 CEREAL_REGISTER_TYPE(CategoricalCrossEntropyLoss<double>)
