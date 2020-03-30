@@ -8,7 +8,7 @@ case "$1" in
     rm -rf $BUILD_DIR
     mkdir $BUILD_DIR
     cd $BUILD_DIR
-    cmake /nn_framework
+    cmake /nn_framework -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 	make
     ./src/main "${@:2}"
     ;;

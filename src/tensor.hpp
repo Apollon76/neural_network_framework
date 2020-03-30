@@ -80,8 +80,10 @@ public:
     }
 
     Tensor(TensorDimensions _dimensions, arma::Mat<T> _values)
-            : D(std::move(_dimensions)),
-              values(arma::field<arma::Mat<T>>(1)) {
+            : D(std::move(_dimensions))
+            , values(arma::field<arma::Mat<T>>(1))
+            , saved_mat(true)
+    {
         values.at(0, 0, 0) = _values;
     }
 
@@ -218,9 +220,27 @@ public:
         return tensor;
     }
 
+    Tensor<T> Rows(const arma::uvec& rows) const {
+        auto dim = D;
+        dim[0] = rows.size();
+        if (saved_mat) {
+            return Tensor<T>(dim, values.at(0, 0, 0).rows(rows));
+        }
+        auto new_data = Tensor<T>(dim, createValuesContainer<T>(dim));
+        if (Rank() <= 2) {
+            new_data.values(0) = values(0).rows(rows);
+        } else {
+            for (size_t i = 0; i < rows.size(); ++i) {
+                new_data.values.row(i) = values.row(rows[i]);
+            }
+        }
+        return new_data;
+    }
+
     TensorDimensions D;
 private:
     arma::field<arma::Mat<T>> values;
+    bool saved_mat = false;
 };
 
 template<typename T>

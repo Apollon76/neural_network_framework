@@ -8,6 +8,7 @@
 #include <src/optimizer.hpp>
 #include "utils.h"
 #include <iostream>
+#include <src/data_processing/data_utils.hpp>
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
@@ -30,6 +31,50 @@ TEST(SigmoidActivationLayerTest, TestPullGradientsBackward) {
             {
                     {10 * sigmoidGradient(1), 20 * sigmoidGradient(2), 30 * sigmoidGradient(3)},
                     {40 * sigmoidGradient(4), 50 * sigmoidGradient(5), 60 * sigmoidGradient(6)},
+            }
+    );
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, expected_gradients);
+}
+
+
+TEST(SigmoidActivationLayerTest, TestPullGradientsBackwardWithBatches) {
+    auto layer = SigmoidActivationLayer<double>();
+    auto batches = Tensor<double>::init(
+            {
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6}
+                    },
+                    {
+                            {6, 5, 4},
+                            {3, 2, 1}
+                    }
+            }
+    );
+    auto output_gradients = Tensor<double>::init(
+            {
+                    {
+                            {10, 20, 30},
+                            {40, 50, 60}
+                    },
+                    {
+                            {60, 50, 40},
+                            {30, 20, 10}
+                    }
+            }
+    );
+    auto gradients = layer.PullGradientsBackward(batches, output_gradients);
+    auto expected_gradients = Tensor<double>::init(
+            {
+                    {
+                            {10 * sigmoidGradient(1), 20 * sigmoidGradient(2), 30 * sigmoidGradient(3)},
+                            {40 * sigmoidGradient(4), 50 * sigmoidGradient(5), 60 * sigmoidGradient(6)},
+                    },
+                    {
+                            {60 * sigmoidGradient(6), 50 * sigmoidGradient(5), 40 * sigmoidGradient(4)},
+                            {30 * sigmoidGradient(3), 20 * sigmoidGradient(2), 10 * sigmoidGradient(1)},
+                    }
             }
     );
     TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
@@ -579,4 +624,161 @@ TEST(ArmaConvolutionTest, TestSame) {
                      },
              })
     );
+}
+
+
+TEST(ShuffleData, TestShuffle) {
+    auto input = Tensor<double>::init(
+            {
+                    {1, 2,  3},
+                    {4, 5,  6},
+                    {7, 8,  9},
+                    {9, 10, 11}
+            }
+    );
+    auto output = Tensor<double>::init({0.1, 0.2, 0.3, 0.4});
+
+    arma::arma_rng::set_seed(42);
+
+    auto actual = nn_framework::data_processing::ShuffleData<double>({input, output});
+    nn_framework::data_processing::Data<double> expected{
+            Tensor<double>::init({
+                                         {9, 10, 11},
+                                         {4, 5,  6},
+                                         {7, 8,  9},
+                                         {1, 2,  3},
+                                 }),
+            Tensor<double>::init({0.4, 0.2, 0.3, 0.1})
+    };
+
+    TENSOR_SHOULD_BE_EQUAL_TO(actual.input, expected.input, 1e-5);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual.output, expected.output, 1e-5);
+}
+
+
+TEST(ShuffleData, TestShuffleWithGreaterRank) {
+    auto input = Tensor<double>::init(
+            {
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6},
+                    },
+                    {
+                            {7, 8, 9},
+                            {9, 10, 11}
+                    },
+            }
+    );
+    auto output = Tensor<double>::init({0.1, 0.2});
+
+    arma::arma_rng::set_seed(42);
+
+    auto actual = nn_framework::data_processing::ShuffleData<double>({input, output});
+    nn_framework::data_processing::Data<double> expected{
+            Tensor<double>::init({
+                                         {
+                                                 {7, 8, 9},
+                                                 {9, 10, 11}
+                                         },
+                                         {
+                                                 {1, 2, 3},
+                                                 {4, 5, 6},
+                                         }
+                                 }),
+            Tensor<double>::init({0.2, 0.1})
+    };
+
+    TENSOR_SHOULD_BE_EQUAL_TO(actual.input, expected.input, 1e-5);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual.output, expected.output, 1e-5);
+}
+
+TEST(Batches, RandomBatches) {
+    auto input = Tensor<double>::init(
+            {
+                            {1, 2, 3},
+                            {4, 5, 6},
+                            {7, 8, 9},
+                            {9, 10, 11}
+            }
+    );
+    auto output = Tensor<double>::init({0.1, 0.2, 0.3, 0.4});
+
+    arma::arma_rng::set_seed(42);
+
+    auto actual = nn_framework::data_processing::GenerateBatches<double>({input, output}, 2, true);
+    std::vector<nn_framework::data_processing::Data<double>> expected{
+            nn_framework::data_processing::Data<double>{
+                    Tensor<double>::init({
+                                                 {9, 10, 11},
+                                                 {4, 5, 6},
+
+                                         }),
+                    Tensor<double>::init({0.4, 0.2})
+            },
+            nn_framework::data_processing::Data<double>{
+                    Tensor<double>::init({
+                                                 {7, 8, 9},
+                                                 {1, 2, 3},
+                                         }),
+                    Tensor<double>::init({0.3, 0.1})
+            },
+    };
+
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[0].input, expected[0].input);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[1].input, expected[1].input);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[0].output, expected[0].output);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[1].output, expected[1].output);
+}
+
+
+TEST(Batches, Batches) {
+    auto input = Tensor<double>::init(
+            {
+                {
+                     {1, 2, 3},
+                     {4, 5, 6},
+                     {7, 8, 9},
+                     {9, 10, 11}
+             },
+                {
+                        {1, 1, 1},
+                        {2, 2, 2},
+                        {3, 3, 3},
+                        {4, 4, 4}
+                },
+            }
+    );
+    auto output = Tensor<double>::init({0.1, 0.2});
+
+    auto actual = nn_framework::data_processing::GenerateBatches<double>({input, output}, 1, false);
+    std::vector<nn_framework::data_processing::Data<double>> expected{
+            nn_framework::data_processing::Data<double>{
+                    Tensor<double>::init({
+                                                 {
+                                                         {1, 2, 3},
+                                                         {4, 5, 6},
+                                                         {7, 8, 9},
+                                                         {9, 10, 11}
+                                                 }
+                                         }
+                    ),
+                    Tensor<double>::init({0.1})
+            },
+            nn_framework::data_processing::Data<double>{
+                    Tensor<double>::init({
+                                                 {
+                                                         {1, 1, 1},
+                                                         {2, 2, 2},
+                                                         {3, 3, 3},
+                                                         {4, 4, 4}
+                                                 }
+                                         }),
+                    Tensor<double>::init({0.2})
+            },
+    };
+
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[0].input, expected[0].input);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[1].input, expected[1].input);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[0].output, expected[0].output);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual[1].output, expected[1].output);
 }

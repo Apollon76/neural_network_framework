@@ -13,3 +13,6 @@ services:
       - "./:/nn_framework"
     ports:
       - "127.0.0.1:${PORT:-2223}:22"
+    environment:
+      - CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:-Debug}
+      - GLOG_logtostderr=${GLOG_logtostderr:-0}

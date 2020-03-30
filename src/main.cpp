@@ -66,13 +66,18 @@ NeuralNetwork<double> BuildMnistNN(std::unique_ptr<IOptimizer<double>> optimizer
 }
 
 NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optimizer) {
+    auto batch_size = 128;
+    auto conv_filters = 2;
+    auto img_size = 28;
     auto neural_network = NeuralNetwork<double>(std::move(optimizer),
-                                                std::make_unique<CategoricalCrossEntropyLoss<double>>());
+                                                std::make_unique<CategoricalCrossEntropyLoss<double>>(),
+                                                batch_size,
+                                                true);
     neural_network
-            .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, 1, 3, 3, ConvolutionPadding::Same))
+            .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, conv_filters, 3, 3, ConvolutionPadding::Same))
             .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
-            .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, 1, 28, 28}))
-            .AddLayer(std::make_unique<DenseLayer<double>>(784 * 1, 100))
+            .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, conv_filters, img_size, img_size}))
+            .AddLayer(std::make_unique<DenseLayer<double>>(img_size * img_size * conv_filters, 100))
             .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())
             .AddLayer(std::make_unique<DenseLayer<double>>(100, 10))
             .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
@@ -89,7 +94,7 @@ void FitNN(NeuralNetwork<T> *neural_network,
            const std::optional<Tensor<T>> &y_test = std::nullopt) {
     Timer timer("Fitting ");
     for (int i = 0; i < epochs; i++) {
-        auto loss = neural_network->Fit(x_train, y_train);
+        auto loss = neural_network->template Fit<true>(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             if (x_test.has_value()) {
@@ -248,7 +253,7 @@ int main(int argc, char **argv) {
     //MnistPng(data_path + "/data", false);
     //Mnist(data_path + "/data");
 //    DigitRecognizerValidation(data_path + "/data", std::make_unique<RMSPropOptimizer<double>>(0.01));
-//    DigitRecognizerConv(data_path + "/data", data_path + "/output", std::make_unique<RMSPropOptimizer<double>>(0.01));
-    DigitRecognizer(data_path + "/data", data_path + "/output", std::make_unique<RMSPropOptimizer<double>>(0.01));
+    DigitRecognizerConv(data_path + "/data", "output", std::make_unique<RMSPropOptimizer<double>>());
+//    DigitRecognizer(data_path + "/data", data_path + "/output", std::make_unique<RMSPropOptimizer<double>>(0.01));
     return 0;
 }
