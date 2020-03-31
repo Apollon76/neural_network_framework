@@ -108,8 +108,8 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
-        return input.template Transform<T>([](const arma::Mat<T> &v) {
-            auto result = v;
+        return input.template Transform<T>([](const arma::Mat<T> &v) -> arma::Mat<T> {
+            arma::Mat<T> result = v;
             result.for_each([](T &value) {
                 if (value < 0) {
                     value = 0;

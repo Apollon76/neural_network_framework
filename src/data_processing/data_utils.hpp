@@ -103,4 +103,45 @@ namespace nn_framework::data_processing {
     private:
         const int random_seed;
     };
+
+    template <typename T>
+    struct Data {
+        Tensor<T> input;
+        Tensor<T> output;
+    };
+
+    template<typename T>
+    Data<T> ShuffleData(const Data<T>& data) {
+        size_t sz = data.input.D[0];
+        arma::uvec ordering = arma::shuffle(arma::linspace<arma::uvec>(0, sz - 1, sz));
+
+        auto new_input = data.input.Rows(ordering);
+        auto new_output = data.output.Rows(ordering);
+
+        return Data<T>{
+                Tensor(data.input.D, new_input.Field()),
+                Tensor(data.output.D, new_output.Field())
+        };
+    }
+
+    template<typename T>
+    std::vector<Data<T>> GenerateBatches(Data<T> data, size_t batch_size, bool shuffle) {
+        if (shuffle) {
+            data = ShuffleData<T>({data.input, data.output});
+        }
+        DLOG(INFO) << "data dim [input=" << FormatDimensions(data.input.D) << " "
+                   << "output=" << FormatDimensions(data.output.D) << "]";
+        std::vector<Data<T>> batches;
+        size_t size = data.input.D[0];
+
+        for (size_t i = 0; i < size; i += batch_size) {
+            auto cur_batch_size = batch_size;
+            if (i + batch_size >= size) {
+                cur_batch_size = size - i;
+            }
+            arma::uvec rows = arma::linspace<arma::uvec>(i, i + cur_batch_size - 1, cur_batch_size);
+            batches.push_back(Data<T>{data.input.Rows(rows), data.output.Rows(rows)});
+        }
+        return batches;
+    }
 }

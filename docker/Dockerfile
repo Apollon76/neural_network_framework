@@ -70,10 +70,12 @@ RUN wget https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp
 RUN mkdir -p /usr/include/nlohmann && mv json.hpp /usr/include/nlohmann/json.hpp
 
 # protobuf
-RUN git clone https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+RUN mkdir -p /tmp/protobuf
 WORKDIR /tmp/protobuf
-RUN git submodule update --init --recursive
-RUN ./autogen.sh
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protobuf-all-3.11.4.tar.gz \
+ && tar -xzf protobuf-all-3.11.4.tar.gz \
+ && rm protobuf-all-3.11.4.tar.gz
+WORKDIR /tmp/protobuf/protobuf-3.11.4
 RUN ./configure
 RUN make -j$(nproc) && make check && make install
 RUN ldconfig
@@ -87,6 +89,11 @@ RUN mkdir -p /tmp/CImg
 WORKDIR /tmp/CImg
 RUN wget https://github.com/dtschump/CImg/archive/v.2.8.4.zip
 RUN unzip v.2.8.4.zip && cp CImg-v.2.8.4/CImg.h /usr/include/
+
+# pbar
+RUN mkdir -p /tmp/pbar
+WORKDIR /tmp/pbar
+RUN git clone https://github.com/Jvanrhijn/pbar.git && cp pbar/pbar.h /usr/include
 
 # sshd:
 ENV LANG C.UTF-8
