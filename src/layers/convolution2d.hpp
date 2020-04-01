@@ -87,6 +87,7 @@ public:
     }
 
     void ApplyGradients(const Tensor<T> &gradients) override {
+        ensure(gradients.D == weights.D);
         for (int filter = 0; filter < weights.D[0]; filter++) {
             for (int input_channel = 0; input_channel < weights.D[1]; input_channel++) {
                 weights.Field()(filter, input_channel) += gradients.Field()(filter, input_channel);

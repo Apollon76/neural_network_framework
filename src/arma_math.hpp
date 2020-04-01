@@ -27,21 +27,33 @@ arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kerne
 template<typename T>
 arma::Mat<T> Conv2d(const arma::Mat<T> &matrix, const arma::Mat<T> &kernel, ConvolutionPadding padding) {
     auto result = arma::Mat<T>(Conv2dSize(arma::size(matrix), arma::size(kernel), padding), arma::fill::zeros);
-    for (arma::uword i = 0; i < result.n_rows; i++) {
-        for (arma::uword s = 0; s < result.n_cols; s++) {
-            auto subX = matrix.submat(
-                    i,
-                    s,
-                    std::min(i + kernel.n_rows - 1, matrix.n_rows - 1),
-                    std::min(s + kernel.n_cols - 1, matrix.n_cols - 1)
-            );
-            auto subY = kernel.submat(
-                    0,
-                    0,
-                    std::min(kernel.n_rows - 1, matrix.n_rows - i - 1),
-                    std::min(kernel.n_cols - 1, matrix.n_cols - s - 1)
-            );
-            result(i, s) = arma::accu(subX % subY);
+    if (padding == ConvolutionPadding::Valid) {
+        for (arma::uword i = 0; i < result.n_rows; i++) {
+            for (arma::uword s = 0; s < result.n_cols; s++) {
+                auto subX = matrix.submat(i, s, i + kernel.n_rows - 1, s + kernel.n_cols - 1);
+                result(i, s) = arma::accu(subX % kernel);
+            }
+        }
+    } else {
+        int left_padding = kernel.n_cols / 2;
+        int up_padding = kernel.n_rows / 2;
+
+        for (int i = -up_padding; i < -up_padding + int64_t(matrix.n_rows); ++i) {
+            for (int s = -left_padding; s < -left_padding + int64_t(matrix.n_cols); ++s) {
+                auto subX = matrix.submat(
+                        std::max<int>(i, 0),
+                        std::max<int>(s, 0),
+                        std::min<int>(i + kernel.n_rows - 1, matrix.n_rows - 1),
+                        std::min<int>(s + kernel.n_cols - 1, matrix.n_cols - 1)
+                );
+                auto subY = kernel.submat(
+                        -std::min(i, 0),
+                        -std::min(s, 0),
+                        -std::min(i, 0) + subX.n_rows - 1,
+                        -std::min(s, 0) + subX.n_cols - 1
+                );
+                result(i + up_padding, s + left_padding) = arma::accu(subX % subY);
+            }
         }
     }
     return result;

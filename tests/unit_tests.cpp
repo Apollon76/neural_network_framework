@@ -427,11 +427,11 @@ TEST(Convolution2dLayerTest, TestApply) {
                 for (int y = 0; y < 5; y++) {
                     double result = 0;
                     for (int input_channel = 0; input_channel < 3; input_channel++) {
-                        for (int dx = 0; dx < 3; dx++) {
-                            for (int dy = 0; dy < 2; dy++) {
-                                if (x + dx < 5 && y + dy < 5) {
+                        for (int dx = -1; dx < 2; dx++) {
+                            for (int dy = -1; dy < 1; dy++) {
+                                if (0 <= x + dx && x + dx < 5 && 0 <= y + dy && y + dy < 5) {
                                     result += input.Field()(batch, input_channel)(x + dx, y + dy) *
-                                              layer.GetWeights().Field()(filter, input_channel)(dx, dy);
+                                              layer.GetWeights().Field()(filter, input_channel)(dx + 1, dy + 1);
                                 }
                             }
                         }
@@ -602,25 +602,18 @@ TEST(ArmaConvolutionTest, TestValid) {
 }
 
 TEST(ArmaConvolutionTest, TestSame) {
-    auto image = arma::mat(3, 3, arma::fill::randu);
-    auto kernel = arma::mat(1, 2, arma::fill::randu);
+    auto image = arma::mat(2, 2, arma::fill::randu);
+    auto kernel = arma::mat(3, 3, arma::fill::randu);
     auto result = Conv2d(image, kernel, ConvolutionPadding::Same);
     MATRIX_SHOULD_BE_EQUAL_TO(result, arma::mat
             ({
                      {
-                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1),
-                             image(0, 1) * kernel(0, 0) + image(0, 2) * kernel(0, 1),
-                             image(0, 2) * kernel(0, 0),
+                             image(0, 0) * kernel(1, 1) + image(0, 1) * kernel(1, 2) + image(1, 0) * kernel(2, 1) + image(1, 1) * kernel(2, 2),
+                             image(0, 0) * kernel(1, 0) + image(0, 1) * kernel(1, 1) + image(1, 0) * kernel(2, 0) + image(1, 1) * kernel(2, 1),
                      },
                      {
-                             image(1, 0) * kernel(0, 0) + image(1, 1) * kernel(0, 1),
-                             image(1, 1) * kernel(0, 0) + image(1, 2) * kernel(0, 1),
-                             image(1, 2) * kernel(0, 0),
-                     },
-                     {
-                             image(2, 0) * kernel(0, 0) + image(2, 1) * kernel(0, 1),
-                             image(2, 1) * kernel(0, 0) + image(2, 2) * kernel(0, 1),
-                             image(2, 2) * kernel(0, 0),
+                             image(0, 0) * kernel(0, 1) + image(0, 1) * kernel(0, 2) + image(1, 0) * kernel(1, 1) + image(1, 1) * kernel(1, 2),
+                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1) + image(1, 0) * kernel(1, 0) + image(1, 1) * kernel(1, 1),
                      },
              })
     );
