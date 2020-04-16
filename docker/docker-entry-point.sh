@@ -18,6 +18,9 @@ case "$1" in
 "benchmark")
     exec "/nn_framework/benchmark/run.sh"
     ;;
+"example-keras-format")
+    exec "/nn_framework/examples/hdf5/run.sh"
+    ;;
 *)
     exec "$@"
     ;;

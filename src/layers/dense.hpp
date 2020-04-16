@@ -21,6 +21,11 @@ public:
         return weights_and_bias;
     }
 
+    void SetWeightsAndBias(Tensor<T> new_weights_and_bias) {
+        ensure(weights_and_bias.D == new_weights_and_bias.D);
+        weights_and_bias = std::move(new_weights_and_bias);
+    }
+
     [[nodiscard]] std::string ToString() const override {
         std::stringstream stream;
         stream << std::endl << weights_and_bias.ToString();

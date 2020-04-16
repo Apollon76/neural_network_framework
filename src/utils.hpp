@@ -1,5 +1,6 @@
 #pragma once
 
+#include <armadillo>
 #include <vector>
 #include <chrono>
 #include <glog/logging.h>

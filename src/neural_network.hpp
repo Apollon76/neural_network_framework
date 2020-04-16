@@ -62,8 +62,25 @@ public:
         return *this;
     }
 
-    [[nodiscard]] ILayer<T> *GetLayer(int layer_id) const {
+    template<template<class> class LayerType, typename... Args>
+    NeuralNetwork& AddLayer(Args&&... args) {
+        return AddLayer(std::make_unique<LayerType<T>>(std::forward<Args>(args)...));
+    }
+
+    [[nodiscard]] ILayer<T> *GetLayer(size_t layer_id) const {
         return layers[layer_id].get();
+    }
+
+    [[nodiscard]] size_t GetLayersCount() const {
+        return layers.size();
+    }
+
+    [[nodiscard]] IOptimizer<T>* GetOptimizer() const {
+        return optimizer.get();
+    }
+
+    [[nodiscard]] ILoss<T>* GetLoss() const {
+        return loss.get();
     }
 
     [[nodiscard]] std::string ToString() const {
@@ -76,7 +93,7 @@ public:
     }
 
     template <bool BarEnabled=false, typename ProgressBarT=ProgressBar<BarEnabled, T>>
-    double Fit(const Tensor<T> &input, const Tensor<T> &output, ProgressBarT *p = nullptr) {
+    double Fit(const Tensor<T> &input, const Tensor<T> &output) {
         DLOG(INFO) << "Fitting neural network...";
 
         auto real_batch_size = (batch_size != NoBatches) ? batch_size : input.D[0];

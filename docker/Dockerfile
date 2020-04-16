@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
 	ssh \
 	git \
 	make \
@@ -24,7 +24,9 @@ RUN apt update && apt install -y \
     g++ \
     unzip \
     libjpeg-dev \
-    libpng-dev
+    libpng-dev \
+    libhdf5-dev \
+    libboost-all-dev
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -54,8 +56,13 @@ RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
 
-# Pip install
-RUN pip3 install tensorflow keras numpy pandas sklearn
+# Benchmark deps
+RUN python3 -m pip install --upgrade pip==20.0.2 && python3 -m pip install \
+    tensorflow==2.1.0 \
+    keras==2.3.1 \
+    numpy==1.18.2 \
+    pandas==1.0.3 \
+    sklearn==0.0
 
 # Csv:
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
@@ -94,6 +101,13 @@ RUN unzip v.2.8.4.zip && cp CImg-v.2.8.4/CImg.h /usr/include/
 RUN mkdir -p /tmp/pbar
 WORKDIR /tmp/pbar
 RUN git clone https://github.com/Jvanrhijn/pbar.git && cp pbar/pbar.h /usr/include
+
+# HighFive
+RUN mkdir -p /tmp/HighFive
+WORKDIR /tmp/HighFive
+RUN wget https://github.com/BlueBrain/HighFive/archive/v2.2.tar.gz && tar -xzf v2.2.tar.gz && rm v2.2.tar.gz
+WORKDIR /tmp/HighFive/HighFive-2.2
+RUN cmake -DHIGHFIVE_EXAMPLES=OFF && make install
 
 # sshd:
 ENV LANG C.UTF-8

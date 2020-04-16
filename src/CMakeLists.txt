@@ -12,9 +12,12 @@ include_directories(${JPEG_INCLUDE_DIRS})
 find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIRS})
 
+find_package(HighFive REQUIRED)
+
+find_package(HDF5 REQUIRED)
+
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER protos/layers.proto)
 
 file(GLOB PROTOBUF_DEFINITION_FILES "*.proto")
@@ -44,14 +47,31 @@ add_library(neural_network_framework SHARED
         io/csv.hpp
         io/img.hpp
         io/filesystem.hpp
+        serialization/hdf5_serialization.hpp
         scoring/scoring.hpp
         os_utils.hpp
         arma_math.hpp
-        ${PROTO_HEADER})
+        ${PROTO_HEADER}
+        ${PROTO_SRC})
 
-target_link_libraries(neural_network_framework ${ARMADILLO_LIBRARIES} pthread glog::glog ${PROTOBUF_LIBRARY} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} stdc++fs)
+target_link_libraries(neural_network_framework
+        ${ARMADILLO_LIBRARIES}
+        pthread
+        glog::glog
+        ${PROTOBUF_LIBRARY}
+        ${PNG_LIBRARIES}
+        ${JPEG_LIBRARIES}
+        stdc++fs
+        ${HDF5_LIBRARIES}
+        ${HDF5_CXX_LIBRARIES}
+        ${HDF5_LIBRARY_DIRS})
+
+target_include_directories(neural_network_framework PUBLIC
+        ${PROJECT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR} # It's required for protobuf for some reason...
+        ${HDF5_INCLUDE_DIRS})
+
 set_target_properties(neural_network_framework PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(neural_network_framework PUBLIC ${PROJECT_SOURCE_DIR})
 
 add_executable(main main.cpp)
 target_link_libraries(main neural_network_framework)

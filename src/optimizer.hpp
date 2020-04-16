@@ -148,6 +148,23 @@ public:
         ar(learning_rate, beta_1, beta_2, epsilon);
     }
 
+    [[nodiscard]] double getLearningRate() const {
+        return learning_rate;
+    }
+
+    [[nodiscard]] double getBeta1() const {
+        return beta_1;
+    }
+
+    [[nodiscard]] double getBeta2() const {
+        return beta_2;
+    }
+
+    [[nodiscard]] double getEpsilon() const {
+        return epsilon;
+    }
+
+
 private:
     arma::Mat<T> GetOrCreatePrevious(const ILayer<T> *layer, mapping_type &mapping, arma::SizeMat size) {
         auto it = mapping.find(layer);
