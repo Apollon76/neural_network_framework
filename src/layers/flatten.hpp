@@ -69,6 +69,14 @@ public:
 
     void ApplyGradients(const Tensor<T> &) override {}
 
+    template<class Archive>
+    void serialize(Archive &ar) {
+        ar(input_dim);
+    }
+
 private:
     TensorDimensions input_dim;
 };
+
+CEREAL_REGISTER_TYPE(FlattenLayer<double>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, FlattenLayer<double>)
