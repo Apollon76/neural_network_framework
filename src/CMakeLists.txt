@@ -51,6 +51,7 @@ add_library(neural_network_framework SHARED
         scoring/scoring.hpp
         os_utils.hpp
         arma_math.hpp
+        arma_math.cpp
         ${PROTO_HEADER}
         ${PROTO_SRC})
 

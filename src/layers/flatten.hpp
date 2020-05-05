@@ -12,12 +12,21 @@
 template<typename T>
 class FlattenLayer : public ILayer<T> {
 public:
+    FlattenLayer() = default;
+
     explicit FlattenLayer(TensorDimensions _input_dim) : input_dim(std::move(_input_dim)) {
         ensure(input_dim.size() >= 2, "Can't apply flatten to vector Tensor");
     }
 
     [[nodiscard]] std::string ToString() const override {
-        return GetName();
+        std::string dims;
+        for (auto d : input_dim) {
+            if (!dims.empty()) {
+                dims += ", ";
+            }
+            dims += std::to_string(d);
+        }
+        return GetName() + ", input dimensions: " + FormatDimensions(input_dim);
     }
 
     [[nodiscard]] std::string GetName() const override {
@@ -69,6 +78,14 @@ public:
 
     void ApplyGradients(const Tensor<T> &) override {}
 
+    template<class Archive>
+    void serialize(Archive &ar) {
+        ar(input_dim);
+    }
+
 private:
     TensorDimensions input_dim;
 };
+
+CEREAL_REGISTER_TYPE(FlattenLayer<double>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, FlattenLayer<double>)

@@ -2,12 +2,15 @@
 
 #include <src/tensor.hpp>
 #include <src/arma_math.hpp>
+#include <cereal/types/polymorphic.hpp>
 
 #include "interface.h"
 
 template<typename T>
 class Convolution2dLayer : public ILayer<T> {
 public:
+    Convolution2dLayer(): padding(ConvolutionPadding::Same) {}
+
     Convolution2dLayer(int input_channels, int filters, int kernel_height, int kernel_width,
                        ConvolutionPadding _padding)
             : weights(Tensor<T>::filled(
@@ -94,7 +97,24 @@ public:
         }
     }
 
+    template<class Archive>
+    void save(Archive &ar) const {
+        ar(weights.D, padding);
+    }
+
+    template<class Archive>
+    void load(Archive &archive) {
+        TensorDimensions d;
+        ConvolutionPadding p;
+        archive(d, p);
+        weights = Tensor<T>::filled(d, arma::fill::randu);
+        padding = p;
+    }
+
 private:
     Tensor<T> weights;
     ConvolutionPadding padding;
 };
+
+CEREAL_REGISTER_TYPE(Convolution2dLayer<double>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, Convolution2dLayer<double>)

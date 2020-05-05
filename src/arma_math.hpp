@@ -2,23 +2,14 @@
 
 #include <armadillo>
 #include <algorithm>
+#include "utils.hpp"
 
 enum ConvolutionPadding {
     Same,
     Valid,
 };
 
-arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kernel, ConvolutionPadding padding) {
-    if (padding == ConvolutionPadding::Same) {
-        return matrix;
-    } else if (padding == ConvolutionPadding::Valid) {
-        ensure(kernel.n_rows <= matrix.n_rows && kernel.n_cols <= matrix.n_cols,
-               "Kernel must be smaller than matrix");
-        return arma::SizeMat(matrix.n_rows - kernel.n_rows + 1, matrix.n_cols - kernel.n_cols + 1);
-    } else {
-        throw std::logic_error("Unsupported padding");
-    }
-}
+arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kernel, ConvolutionPadding padding);
 
 // note (sivukhin): Простая реализация конволюции. Решил написать свою по слеудющим причинам:
 // 1. arma::conv2 реализует не совсем понятную конволюцию (матрица ядра как-то поворачивается, транспорнируется) и велика вероятность запутаться
