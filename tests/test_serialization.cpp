@@ -5,6 +5,10 @@
 #include <src/layers/dense.hpp>
 #include <src/loss.hpp>
 #include <src/neural_network.hpp>
+#include <src/layers/flatten.hpp>
+#include <src/layers/convolution2d.hpp>
+#include <src/arma_math.h>
+
 #include "utils.h"
 
 
@@ -109,5 +113,50 @@ TEST(SerializationTest, TestSequentialModel) {
             actual_names.push_back(deserialized.GetLayer(i)->GetName());
         }
         ASSERT_EQ(actual_names, expected_names);
+    }
+}
+
+TEST(SerializationTest, TestSaveFlatten) {
+    auto filename = "flatten_test.json";
+    TensorDimensions shape = {1, 2, 3};
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        auto layer = FlattenLayer<double>(shape);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        FlattenLayer<double> deserialized;
+        iarchive(deserialized);
+
+        ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1, 2, 3");
+    }
+}
+
+TEST(SerializationTest, TestSaveConv2d) {
+    auto filename = "conv2d_test.json";
+    TensorDimensions shape = {1, 2, 3};
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        auto layer = Convolution2dLayer<double>(1, 2, 3, 4, ConvolutionPadding::Valid);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        Convolution2dLayer<double> deserialized;
+        iarchive(deserialized);
+
+        std::cerr << deserialized.GetName() << std::endl;
+        ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1, 2, 3");
     }
 }

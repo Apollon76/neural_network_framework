@@ -6,6 +6,7 @@
 #include <src/layers/flatten.hpp>
 #include <src/neural_network.hpp>
 #include <src/optimizer.hpp>
+#include <src/arma_math.h>
 #include "utils.h"
 #include <iostream>
 #include <src/data_processing/data_utils.hpp>

@@ -50,7 +50,8 @@ add_library(neural_network_framework SHARED
         serialization/hdf5_serialization.hpp
         scoring/scoring.hpp
         os_utils.hpp
-        arma_math.hpp
+        arma_math.h
+        arma_math.cpp
         ${PROTO_HEADER}
         ${PROTO_SRC})
 

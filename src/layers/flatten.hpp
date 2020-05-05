@@ -12,12 +12,21 @@
 template<typename T>
 class FlattenLayer : public ILayer<T> {
 public:
+    FlattenLayer() = default;
+
     explicit FlattenLayer(TensorDimensions _input_dim) : input_dim(std::move(_input_dim)) {
         ensure(input_dim.size() >= 2, "Can't apply flatten to vector Tensor");
     }
 
     [[nodiscard]] std::string ToString() const override {
-        return GetName();
+        std::string dims;
+        for (auto d : input_dim) {
+            if (!dims.empty()) {
+                dims += ", ";
+            }
+            dims += std::to_string(d);
+        }
+        return GetName() + ", input dimensions: " + dims;
     }
 
     [[nodiscard]] std::string GetName() const override {
