@@ -47,10 +47,6 @@ public:
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
     ) const override {
-        DLOG(INFO) << "Pull gradients for dense layer: "
-                   << "inputs=[" + FormatDimensions(inputs) + "], "
-                   << "output_gradients=[" + FormatDimensions(output_gradients) + "], "
-                   << "weights_and_bias=[" + FormatDimensions((weights_and_bias)) + "]";
         auto weights = weights_and_bias.Values().head_rows(weights_and_bias.D[0] - 1);
         auto bias = weights_and_bias.Values().tail_rows(1);
         return Gradients<T>{
@@ -63,9 +59,6 @@ public:
     }
 
     void ApplyGradients(const Tensor<T> &gradients) override {
-        DLOG(INFO) << "Apply gradients for dense layer: "
-                   << "gradients[0]=[" + FormatDimensions(gradients) + "], "
-                   << "weights=[" + FormatDimensions(weights_and_bias) + "]";
         weights_and_bias.Values() += gradients.Values();
     }
 
