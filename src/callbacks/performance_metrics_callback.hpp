@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <iomanip>
 #include "interface.hpp"
 
 class Metrics {
@@ -11,10 +12,6 @@ public:
 
     [[nodiscard]] std::chrono::milliseconds LastDuration() const {
         return last_duration;
-    }
-
-    [[nodiscard]] int64_t MetricsCount() const {
-        return metrics_count;
     }
 
     template<typename Duration>
@@ -40,6 +37,45 @@ struct PerformanceMetrics {
     std::map<std::string, Metrics> apply_gradients_metrics;
 };
 
+std::string ReportMetric(const std::string &caption, Metrics &metrics, bool with_last_duration) {
+    std::stringstream report;
+    report << caption << ": average duration=" << metrics.AverageDuration().count() << "ms";
+    if (with_last_duration) {
+        report << ", last duration=" << metrics.LastDuration().count() << "ms";
+    }
+    report << std::endl;
+    return report.str();
+}
+
+std::string ReportMetricMap(const std::string &caption, std::map<std::string, Metrics> &metrics) {
+    std::stringstream report;
+    report << caption << std::endl;
+    auto values = std::vector<std::pair<std::string, Metrics>>(metrics.begin(), metrics.end());
+    std::sort(values.begin(), values.end(),
+              [](const std::pair<std::string, Metrics> &a, const std::pair<std::string, Metrics> &b) {
+                  return a.second.AverageDuration() > b.second.AverageDuration();
+              });
+    for (auto &&[name, metric] : values) {
+        report << std::string(8, ' ') << std::setw(8) << metric.AverageDuration().count();
+        report << "ms: " << name << std::endl;
+    }
+    return report.str();
+}
+
+std::string ReportMetrics(PerformanceMetrics &full_metrics) {
+    auto indent = std::string(4, ' ');
+    std::stringstream report;
+    report << "Metrics report: " << std::endl;
+    report << indent << ReportMetric("Full epoch          ", full_metrics.fit_metrics, true);
+    report << indent << ReportMetric("Full batch          ", full_metrics.fit_batch_metrics, false);
+    report << indent << ReportMetric("Gradient calculation", full_metrics.gradients_metrics, false);
+    report << indent << ReportMetricMap("Forward pass", full_metrics.forward_pass_metrics);
+    report << indent << ReportMetricMap("Backward pass", full_metrics.backward_pass_metrics);
+    report << indent << ReportMetricMap("Gradient step", full_metrics.gradient_step_metrics);
+    report << indent << ReportMetricMap("Apply gradients", full_metrics.apply_gradients_metrics);
+    return report.str();
+}
+
 template<typename T>
 class PerformanceMetricsCallback : public ANeuralNetworkCallback<T> {
 public:
@@ -47,15 +83,16 @@ public:
 
     std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>> Fit(int) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start](const Tensor<T> &, double) {
+        return [this, start](const Tensor<T> &, double) {
             metrics.fit_metrics.AddMetric(std::chrono::steady_clock::now() - start);
+            LOG(INFO) << ReportMetrics(metrics);
             return CallbackSignal::Continue;
         };
     }
 
     std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start]() {
+        return [this, start]() {
             metrics.fit_batch_metrics.AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
@@ -63,7 +100,7 @@ public:
     std::optional<std::function<void(const Tensor<T> &output)>>
     LayerForwardPass(const ILayer<T> *layer, const Tensor<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start, layer](const Tensor<T> &) {
+        return [this, start, layer](const Tensor<T> &) {
             metrics.forward_pass_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
@@ -71,7 +108,7 @@ public:
     std::optional<std::function<void(const Gradients<T> &gradients)>>
     LayerBackwardPass(const ILayer<T> *layer, const Tensor<T> &, const Tensor<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start, layer](const Gradients<T> &) {
+        return [this, start, layer](const Gradients<T> &) {
             metrics.backward_pass_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
@@ -79,7 +116,7 @@ public:
     std::optional<std::function<void(const Tensor<T> &output_gradients)>>
     OptimizerGradients(const Tensor<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start](const Tensor<T> &) {
+        return [this, start](const Tensor<T> &) {
             metrics.gradients_metrics.AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
@@ -87,7 +124,7 @@ public:
     std::optional<std::function<void(const Tensor<T> &gradient_step)>>
     OptimizerGradientStep(const ILayer<T> *layer, const Tensor<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start, layer](const Tensor<T> &) {
+        return [this, start, layer](const Tensor<T> &) {
             metrics.gradient_step_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
@@ -95,7 +132,7 @@ public:
     std::optional<std::function<void()>>
     LayerApplyGradients(const ILayer<T> *layer, const Tensor<T> &) override {
         auto start = std::chrono::steady_clock::now();
-        return [this, &start, layer]() {
+        return [this, start, layer]() {
             metrics.apply_gradients_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
         };
     }
