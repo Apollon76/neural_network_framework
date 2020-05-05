@@ -52,6 +52,10 @@ add_library(neural_network_framework SHARED
         os_utils.hpp
         arma_math.hpp
         arma_math.cpp
+        callbacks/interface.hpp
+        callbacks/combined_callback.hpp
+        callbacks/performance_metrics_callback.hpp
+        callbacks/loggin_callback.hpp
         ${PROTO_HEADER}
         ${PROTO_SRC})
 
