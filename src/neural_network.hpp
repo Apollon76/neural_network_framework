@@ -3,7 +3,7 @@
 #include <memory>
 #include <cereal/types/vector.hpp>
 #include <pbar.h>
-#include <src/callbacks/combined_callback.hpp>
+#include <src/callbacks/meta_callbacks.hpp>
 
 #include "src/layers/activations.hpp"
 #include "src/layers/interface.h"
@@ -11,6 +11,7 @@
 #include "loss.hpp"
 #include "optimizer.hpp"
 #include "tensor.hpp"
+#include "neural_network_interface.hpp"
 
 using nn_framework::data_processing::GenerateBatches;
 using nn_framework::data_processing::Data;
@@ -39,7 +40,7 @@ struct ProgressBar<true, T, Container, Size, Symbol> {
 
 
 template<typename T>
-class NeuralNetwork {
+class NeuralNetwork : public INeuralNetwork<T> {
 public:
     NeuralNetwork() = default;
 
@@ -67,7 +68,7 @@ public:
     }
 
     NeuralNetwork &AddCallback(std::shared_ptr<ANeuralNetworkCallback<T>> callback) {
-        callbacks.emplace_back(std::move(callback));
+        callbacks.emplace_back(callback);
         return *this;
     }
 
@@ -105,9 +106,10 @@ public:
     void FitNN(int epochs, const Tensor<T> &input, const Tensor<T> &output) {
         auto callback = CombinedNeuralNetworkCallback(callbacks);
         for (int i = 0; i < epochs; i++) {
-            auto fitEpochCallback = callback.Fit(i);
+            auto fitEpochCallback = callback.Fit(this, i);
             DoFit(input, output, callback);
             if (fitEpochCallback != std::nullopt) {
+                // todo (sivukhin): try to avoid unnecessary calculation here
                 auto prediction = Predict(input);
                 auto predictionLoss = loss->GetLoss(prediction, output);
                 auto signal = fitEpochCallback.value()(prediction, predictionLoss);
@@ -124,7 +126,7 @@ public:
         return loss->GetLoss(Predict(input), output);
     }
 
-    [[nodiscard]] Tensor<T> Predict(const Tensor<T> &input) const {
+    [[nodiscard]] Tensor<T> Predict(const Tensor<T> &input) const override {
         Tensor<T> output = input;
         for (auto &&layer : layers) {
             output = layer->Apply(output);
@@ -142,8 +144,9 @@ private:
         auto real_batch_size = (batch_size != NoBatches) ? batch_size : input.D[0];
 
         std::vector<Data<T>> batches = GenerateBatches<T>(Data<T>{input, output}, real_batch_size, shuffle);
+        int batch_id = 0;
         for (const Data<T> &batch: batches) {
-            auto fitBatchAction = callback.FitBatch(batch);
+            auto fitBatchAction = callback.FitBatch(batch, batch_id++, batches.size());
             DoFitBatch(batch, callback);
             if (fitBatchAction != std::nullopt) {
                 fitBatchAction.value()();

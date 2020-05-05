@@ -15,7 +15,7 @@
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
 #include <src/callbacks/performance_metrics_callback.hpp>
-#include <src/callbacks/loggin_callback.hpp>
+#include <src/callbacks/logging_callback.hpp>
 #include <src/os_utils.hpp>
 #include <src/tensor.hpp>
 
@@ -153,8 +153,15 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNNConv(std::move(optimizer));
-    neural_network.AddCallback<PerformanceMetricsCallback>();
-    neural_network.AddCallback<LoggingCallback>();
+    neural_network.AddCallback(EveryNthEpoch<double>(
+            10,
+            ScoreCallback<double>("train score", [](const Tensor<double> &a,
+                                                    const Tensor<double> &b) {
+                return nn_framework::scoring::one_hot_accuracy_score(a, b);
+            }, x_train, y_train))
+    );
+//    neural_network.AddCallback<PerformanceMetricsCallback>();
+//    neural_network.AddCallback<LoggingCallback>();
     neural_network.FitNN(40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);

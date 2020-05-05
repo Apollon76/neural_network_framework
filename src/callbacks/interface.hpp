@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "src/tensor.hpp"
+#include "src/neural_network_interface.hpp"
 #include "src/layers/interface.h"
 #include "src/data_processing/data_utils.hpp"
 
@@ -18,11 +19,13 @@ enum CallbackSignal {
 template<typename T>
 class ANeuralNetworkCallback {
 public:
-    virtual std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>> Fit(int epoch) {
+    virtual std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
+    Fit(const INeuralNetwork<T> *nn, int epoch) {
         return std::nullopt;
     }
 
-    virtual std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &batch_data) {
+    virtual std::optional<std::function<void()>>
+    FitBatch(const nn_framework::data_processing::Data<T> &batch_data, int batch_id, int batches_count) {
         return std::nullopt;
     }
 

@@ -3,10 +3,14 @@
 #include <chrono>
 #include <iomanip>
 #include "interface.hpp"
+#include "src/neural_network_interface.hpp"
 
 class Metrics {
 public:
     [[nodiscard]] std::chrono::milliseconds AverageDuration() const {
+        if (metrics_count == 0) {
+            return std::chrono::milliseconds::zero();
+        }
         return total_duration / metrics_count;
     }
 
@@ -81,7 +85,8 @@ class PerformanceMetricsCallback : public ANeuralNetworkCallback<T> {
 public:
     PerformanceMetricsCallback() = default;
 
-    std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>> Fit(int) override {
+    std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
+    Fit(const INeuralNetwork<T> *, int) override {
         auto start = std::chrono::steady_clock::now();
         return [this, start](const Tensor<T> &, double) {
             metrics.fit_metrics.AddMetric(std::chrono::steady_clock::now() - start);
@@ -90,7 +95,7 @@ public:
         };
     }
 
-    std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &) override {
+    std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &, int, int) override {
         auto start = std::chrono::steady_clock::now();
         return [this, start]() {
             metrics.fit_batch_metrics.AddMetric(std::chrono::steady_clock::now() - start);

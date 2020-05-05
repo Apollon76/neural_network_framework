@@ -7,8 +7,10 @@
 
 #include "src/callbacks/interface.hpp"
 #include "src/tensor.hpp"
+#include "src/neural_network_interface.hpp"
 #include "src/layers/interface.h"
 #include "src/data_processing/data_utils.hpp"
+#include "src/loss.hpp"
 
 
 // todo (sivukhin): add simple error handling in CombinedNeuralNetworkCallback
@@ -18,10 +20,11 @@ public:
     explicit CombinedNeuralNetworkCallback(std::vector<std::shared_ptr<ANeuralNetworkCallback<T>>> _callbacks)
             : callbacks(_callbacks) {}
 
-    std::optional<std::function<CallbackSignal(const Tensor<T> &, double)>> Fit(int epoch) override {
+    std::optional<std::function<CallbackSignal(const Tensor<T> &, double)>>
+    Fit(const INeuralNetwork<T> *nn, int epoch) override {
         std::optional<std::function<CallbackSignal(const Tensor<T> &, double)>> action = std::nullopt;
         for (auto &&callback : callbacks) {
-            auto current = callback->Fit(epoch);
+            auto current = callback->Fit(nn, epoch);
             if (current != std::nullopt) {
                 action = [action, current](const Tensor<T> &prediction, double loss) {
                     auto signal = current.value()(prediction, loss);
@@ -36,9 +39,10 @@ public:
         return action;
     }
 
-    std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &batch_data) override {
-        auto finishFuncs = FeedCallbacks([&batch_data](ANeuralNetworkCallback<T> &c) {
-            return c.FitBatch(batch_data);
+    std::optional<std::function<void()>>
+    FitBatch(const nn_framework::data_processing::Data<T> &batch_data, int batch_id, int batches_count) override {
+        auto finishFuncs = FeedCallbacks([&batch_data, batch_id, batches_count](ANeuralNetworkCallback<T> &c) {
+            return c.FitBatch(batch_data, batch_id, batches_count);
         });
         return [finishFuncs, this]() {
             FinishCallbacks(finishFuncs);
@@ -121,3 +125,51 @@ private:
 
     std::vector<std::shared_ptr<ANeuralNetworkCallback<T>>> callbacks;
 };
+
+template<typename T>
+using FitCallback = std::optional<std::function<CallbackSignal(const Tensor<T> &, double)>>;
+
+template<typename T>
+class EpochCallback : public ANeuralNetworkCallback<T> {
+public:
+    explicit EpochCallback(const std::function<FitCallback<T>(const INeuralNetwork<T> *, int)> &_callback)
+            : callback(_callback) {}
+
+
+    std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
+    Fit(const INeuralNetwork<T> *nn, int epoch) override {
+        return callback(nn, epoch);
+    }
+
+private:
+    std::function<FitCallback<T>(const INeuralNetwork<T> *, int)> callback;
+};
+
+template<typename T>
+std::shared_ptr<ANeuralNetworkCallback<T>>
+EveryNthEpoch(int every_nth_epoch, std::shared_ptr<ANeuralNetworkCallback<T>> callback) {
+    return std::make_shared<EpochCallback<T>>(
+            [every_nth_epoch, callback](const INeuralNetwork<T> *nn, int epoch) -> FitCallback<T> {
+                if (epoch % every_nth_epoch == 0) {
+                    return callback->Fit(nn, epoch);
+                }
+                return std::nullopt;
+            }
+    );
+}
+
+template<typename T>
+std::shared_ptr<ANeuralNetworkCallback<T>>
+ScoreCallback(const std::string &caption,
+              const std::function<double(const Tensor<T> &, const Tensor<T> &)> &scoring,
+              const Tensor<T> &x, const Tensor<T> &y) {
+    return std::make_shared<EpochCallback<T>>(
+            [&x, &y, scoring, caption](const INeuralNetwork<T> *nn, int epoch) -> FitCallback<T> {
+                return [&x, &y, scoring, caption, nn, epoch](const Tensor<T> &, double) {
+                    auto prediction = nn->Predict(x);
+                    auto l = scoring(prediction, y);
+                    LOG(INFO) << "Epoch " << epoch << ", " << caption << ": " << l;
+                    return CallbackSignal::Continue;
+                };
+            });
+}

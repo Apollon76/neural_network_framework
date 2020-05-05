@@ -3,6 +3,7 @@
 #include <string>
 
 #include "interface.hpp"
+#include "src/neural_network_interface.hpp"
 
 enum LoggingLevelFlags {
     Epoch = 1,
@@ -24,7 +25,8 @@ public:
     explicit LoggingCallback(LoggingLevelFlags _flags = LoggingLevelFlags::Epoch | LoggingLevelFlags::Batch)
             : indentation(0), flags(_flags) {}
 
-    std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>> Fit(int epoch) override {
+    std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
+    Fit(const INeuralNetwork<T> *, int epoch) override {
         if (!HasFlag(flags, LoggingLevelFlags::Epoch)) {
             return std::nullopt;
         }
@@ -38,12 +40,13 @@ public:
         };
     }
 
-    std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &batch_data) override {
+    std::optional<std::function<void()>>
+    FitBatch(const nn_framework::data_processing::Data<T> &batch_data, int batch_id, int batches_count) override {
         if (!HasFlag(flags, LoggingLevelFlags::Batch)) {
             return std::nullopt;
         }
         LOG(INFO) << Indentation()
-                  << "Start fitting batch "
+                  << "Start fitting batch " << batch_id << " / " << batches_count << " "
                   << "with input tensor " << FormatDimensions(batch_data.input) << " "
                   << "and output tensor " << FormatDimensions(batch_data.output);
         indentation++;
