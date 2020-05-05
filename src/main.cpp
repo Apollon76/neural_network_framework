@@ -14,6 +14,8 @@
 #include <src/layers/dense.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
+#include <src/callbacks/performance_metrics_callback.hpp>
+#include <src/callbacks/loggin_callback.hpp>
 #include <src/os_utils.hpp>
 #include <src/tensor.hpp>
 
@@ -94,7 +96,7 @@ void FitNN(NeuralNetwork<T> *neural_network,
            const std::optional<Tensor<T>> &y_test = std::nullopt) {
     Timer timer("Fitting ");
     for (int i = 0; i < epochs; i++) {
-        auto loss = neural_network->template Fit<true>(x_train, y_train);
+        auto loss = neural_network->Fit(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             if (x_test.has_value()) {
@@ -151,7 +153,9 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNNConv(std::move(optimizer));
-    FitNN(&neural_network, 40, x_train, y_train);
+    neural_network.AddCallback<PerformanceMetricsCallback>();
+    neural_network.AddCallback<LoggingCallback>();
+    neural_network.FitNN(40, x_train, y_train);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
