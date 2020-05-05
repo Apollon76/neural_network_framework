@@ -10,7 +10,6 @@
 #include "utils.h"
 #include <iostream>
 #include <src/data_processing/data_utils.hpp>
-#include <cereal/archives/json.hpp>
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
