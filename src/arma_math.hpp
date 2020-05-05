@@ -1,7 +1,13 @@
-#include "arma_math.h"
+#pragma once
 
+#include <armadillo>
+#include <algorithm>
 #include "utils.hpp"
 
+enum ConvolutionPadding {
+    Same,
+    Valid,
+};
 
 arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kernel, ConvolutionPadding padding) {
     if (padding == ConvolutionPadding::Same) {

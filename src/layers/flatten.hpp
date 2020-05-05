@@ -26,7 +26,7 @@ public:
             }
             dims += std::to_string(d);
         }
-        return GetName() + ", input dimensions: " + dims;
+        return GetName() + ", input dimensions: " + FormatDimensions(input_dim);
     }
 
     [[nodiscard]] std::string GetName() const override {

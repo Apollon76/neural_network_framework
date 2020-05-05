@@ -1,7 +1,7 @@
 #pragma once
 
 #include <src/tensor.hpp>
-#include <src/arma_math.h>
+#include <src/arma_math.hpp>
 #include <cereal/types/polymorphic.hpp>
 
 #include "interface.h"

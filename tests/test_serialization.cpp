@@ -7,7 +7,7 @@
 #include <src/neural_network.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
-#include <src/arma_math.h>
+#include <src/arma_math.hpp>
 
 #include "utils.h"
 
@@ -134,7 +134,7 @@ TEST(SerializationTest, TestSaveFlatten) {
         FlattenLayer<double> deserialized;
         iarchive(deserialized);
 
-        ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1, 2, 3");
+        ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1 x 2 x 3");
     }
 }
 
@@ -156,7 +156,6 @@ TEST(SerializationTest, TestSaveConv2d) {
         Convolution2dLayer<double> deserialized;
         iarchive(deserialized);
 
-        std::cerr << deserialized.GetName() << std::endl;
-        ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1, 2, 3");
+        ASSERT_EQ(deserialized.GetName(), "Conv2d[2 x 1 x 3 x 4 (including bias)]");
     }
 }
