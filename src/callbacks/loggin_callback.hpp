@@ -28,12 +28,12 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Epoch)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start epoch " << epoch;
+        LOG(INFO) << Indentation()
+                  << "Start epoch " << epoch;
         indentation++;
         return [epoch, this](const Tensor<T> &, double loss) {
             indentation--;
-            DLOG(INFO) << Indentation() << "Finish epoch " << epoch << " with loss " << loss;
+            LOG(INFO) << Indentation() << "Finish epoch " << epoch << " with loss " << loss;
             return CallbackSignal::Continue;
         };
     }
@@ -42,14 +42,14 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Batch)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start fitting batch "
-                   << "with input tensor " << FormatDimensions(batch_data.input) << " "
-                   << "and output tensor " << FormatDimensions(batch_data.output);
+        LOG(INFO) << Indentation()
+                  << "Start fitting batch "
+                  << "with input tensor " << FormatDimensions(batch_data.input) << " "
+                  << "and output tensor " << FormatDimensions(batch_data.output);
         indentation++;
         return [this]() {
             indentation--;
-            DLOG(INFO) << Indentation() << "Finish fitting batch";
+            LOG(INFO) << Indentation() << "Finish fitting batch";
         };
     }
 
@@ -58,11 +58,11 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Internals)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start forward pass for layer " << layer->GetName() << " "
-                   << "with input tensor " << FormatDimensions(input);
+        LOG(INFO) << Indentation()
+                  << "Start forward pass for layer " << layer->GetName() << " "
+                  << "with input tensor " << FormatDimensions(input);
         return [this](const Tensor<T> &) {
-            DLOG(INFO) << Indentation() << "Finish forward pass";
+            LOG(INFO) << Indentation() << "Finish forward pass";
         };
     }
 
@@ -71,11 +71,11 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Internals)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation() << "Start backward pass for layer " << layer->GetName()
-                   << " with input tensor " << FormatDimensions(input)
-                   << " and output gradients tensor " << FormatDimensions(output_gradients);
+        LOG(INFO) << Indentation() << "Start backward pass for layer " << layer->GetName()
+                  << " with input tensor " << FormatDimensions(input)
+                  << " and output gradients tensor " << FormatDimensions(output_gradients);
         return [this](const Gradients<T> &) {
-            DLOG(INFO) << Indentation() << "Finish backward pass";
+            LOG(INFO) << Indentation() << "Finish backward pass";
         };
     }
 
@@ -84,10 +84,10 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Internals)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start calculating output gradients for output tensor " << FormatDimensions(output);
+        LOG(INFO) << Indentation()
+                  << "Start calculating output gradients for output tensor " << FormatDimensions(output);
         return [this](const Tensor<T> &) {
-            DLOG(INFO) << Indentation() << "Finish calculating output gradients";
+            LOG(INFO) << Indentation() << "Finish calculating output gradients";
         };
     }
 
@@ -96,11 +96,11 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Internals)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start calculating gradient step for layer " << layer->GetName() << " "
-                   << "with layer gradients tensor " << FormatDimensions(layer_gradients);
+        LOG(INFO) << Indentation()
+                  << "Start calculating gradient step for layer " << layer->GetName() << " "
+                  << "with layer gradients tensor " << FormatDimensions(layer_gradients);
         return [this](const Tensor<T> &) {
-            DLOG(INFO) << Indentation() << "Finish calculating gradient step";
+            LOG(INFO) << Indentation() << "Finish calculating gradient step";
         };
     }
 
@@ -109,11 +109,11 @@ public:
         if (!HasFlag(flags, LoggingLevelFlags::Internals)) {
             return std::nullopt;
         }
-        DLOG(INFO) << Indentation()
-                   << "Start applying gradients for layer " << layer->GetName() << " "
-                   << "with layer gradients tensor " << FormatDimensions(gradients);
+        LOG(INFO) << Indentation()
+                  << "Start applying gradients for layer " << layer->GetName() << " "
+                  << "with layer gradients tensor " << FormatDimensions(gradients);
         return [this]() {
-            DLOG(INFO) << Indentation() << "Finish applying gradients";
+            LOG(INFO) << Indentation() << "Finish applying gradients";
         };
     }
 
