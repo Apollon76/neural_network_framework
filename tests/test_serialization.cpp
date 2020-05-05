@@ -6,6 +6,7 @@
 #include <src/loss.hpp>
 #include <src/neural_network.hpp>
 #include <src/layers/flatten.hpp>
+#include <src/layers/convolution2d.hpp>
 
 #include "utils.h"
 
@@ -133,5 +134,27 @@ TEST(SerializationTest, TestSaveFlatten) {
         iarchive(deserialized);
 
         ASSERT_EQ(deserialized.ToString(), "Flatten, input dimensions: 1 x 2 x 3");
+    }
+}
+
+TEST(SerializationTest, TestSaveConv2d) {
+    auto filename = "conv2d_test.json";
+    TensorDimensions shape = {1, 2, 3};
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        auto layer = Convolution2dLayer<double>(1, 2, 3, 4, ConvolutionPadding::Valid);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        Convolution2dLayer<double> deserialized;
+        iarchive(deserialized);
+
+        ASSERT_EQ(deserialized.GetName(), "Conv2d[2 x 1 x 3 x 4 (including bias)]");
     }
 }

@@ -784,25 +784,3 @@ TEST(Batches, Batches) {
     TENSOR_SHOULD_BE_EQUAL_TO(actual[0].output, expected[0].output);
     TENSOR_SHOULD_BE_EQUAL_TO(actual[1].output, expected[1].output);
 }
-
-TEST(SerializationTest, TestSaveConv2d) {
-    auto filename = "conv2d_test.json";
-    TensorDimensions shape = {1, 2, 3};
-    {
-        std::ofstream os(filename);
-        cereal::JSONOutputArchive oarchive(os);
-
-        auto layer = Convolution2dLayer<double>(1, 2, 3, 4, ConvolutionPadding::Valid);
-        oarchive(layer);
-    }
-
-    {
-        std::ifstream is(filename);
-        cereal::JSONInputArchive iarchive(is);
-
-        Convolution2dLayer<double> deserialized;
-        iarchive(deserialized);
-
-        ASSERT_EQ(deserialized.GetName(), "Conv2d[2 x 1 x 3 x 4 (including bias)]");
-    }
-}
