@@ -22,7 +22,7 @@ public:
         return "Dropout";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
         mask = Tensor<T>::filled(input.D, arma::fill::zeros);
         mask.ForEach([&](int, int, int, arma::Mat<T> &data){
             data.imbue([&]() {
@@ -43,7 +43,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) override {
+    ) const override {
         auto result = Tensor<T>(output_gradients.D, output_gradients.Field());
         result.ForEach([&](int a, int b, int c, arma::Mat<T> &data){
             data %= mask.Field().at(a, b, c);
@@ -63,9 +63,9 @@ public:
 
 private:
     double p;
-    Tensor<T> mask;
-    std::mt19937 engine;
-    std::uniform_real_distribution<double> distr;
+    mutable Tensor<T> mask;
+    mutable std::mt19937 engine;
+    mutable std::uniform_real_distribution<double> distr;
 };
 
 CEREAL_REGISTER_TYPE(DropoutLayer<double>)

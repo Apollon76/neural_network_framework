@@ -19,7 +19,7 @@ public:
         return "SigmoidActivation";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
         return input.template Transform<T>([](const arma::Mat<T> &v) {
             arma::Mat<T> value = 1 / (1 + arma::exp(-v));
             return value;
@@ -29,7 +29,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) override {
+    ) const override {
         auto activation = Apply(inputs);
         return Gradients<T>{
                 output_gradients.template DiffWith<T>(activation, [](const arma::Mat<T> &a, const arma::Mat<T> &b) {
@@ -60,7 +60,7 @@ public:
         return "SoftmaxActivation";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
         // todo (sivukhin): Generalize sotfmax for tensor of arbitary dimension
         ensure(input.Rank() == 2, "SoftMax activation supported only for tensors of rank = 2");
         arma::Mat<T> shifted_input =
@@ -73,7 +73,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) override {
+    ) const override {
         auto forward_outputs = Apply(inputs); // todo (mpivko): maybe cache this in field?
 
         arma::mat sum = arma::sum(output_gradients.Values() % forward_outputs.Values(), 1);
@@ -107,7 +107,7 @@ public:
         return "ReLU Activation";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
         return input.template Transform<T>([](const arma::Mat<T> &v) -> arma::Mat<T> {
             arma::Mat<T> result = v;
             result.for_each([](T &value) {
@@ -122,7 +122,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) override {
+    ) const override {
         return Gradients<T>{
                 output_gradients.template DiffWith<T>(inputs, [](const arma::Mat<T> &a, const arma::Mat<T> &b) -> arma::Mat<T> {
                     arma::Mat<T> diff = b;
@@ -159,7 +159,7 @@ public:
         return "Tanh Activation";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
         auto &values = input.Values();
         return Tensor<T>(
                 input.D,
@@ -170,7 +170,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) override {
+    ) const override {
         arma::Mat<T> forward_outputs = Apply(inputs).Values();
         arma::Mat<T> differentiated = (1 - arma::square(forward_outputs));
         return Gradients<T>{
