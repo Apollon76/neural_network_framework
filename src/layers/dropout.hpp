@@ -12,7 +12,7 @@ class DropoutLayer : public ILayer<T> {
 public:
     DropoutLayer() = default;
 
-    DropoutLayer(double _p): p(_p), distr(0.0, 1.0), engine(0) {}
+    DropoutLayer(double _p): p(_p) {}
 
     [[nodiscard]] std::string ToString() const override {
         return GetName() + ": p=" + std::to_string(p);
@@ -23,15 +23,9 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
-        mask = Tensor<T>::filled(input.D, arma::fill::zeros);
+        mask = Tensor<T>::filled(input.D, arma::fill::randu);
         mask.ForEach([&](int, int, int, arma::Mat<T> &data){
-            data.imbue([&]() {
-                if (distr(engine) > p) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            });
+            data.transform([&](T value) { return value > p ? 1 : 0; });
         });
         auto result = Tensor<T>(input.D, input.Field());
         result.ForEach([&](int a, int b, int c, arma::Mat<T> &data){
@@ -64,8 +58,6 @@ public:
 private:
     double p;
     mutable Tensor<T> mask;
-    mutable std::mt19937 engine;
-    mutable std::uniform_real_distribution<double> distr;
 };
 
 CEREAL_REGISTER_TYPE(DropoutLayer<double>)
