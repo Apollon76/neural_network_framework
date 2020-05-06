@@ -28,7 +28,7 @@ void FitNN(NeuralNetwork<T> *neural_network, int epochs, const Tensor<T> &x_trai
            const Tensor<T> &x_test, const Tensor<T> &y_test) {
     Timer timer("Fitting ", true);
     for (int i = 0; i < epochs; i++) {
-        auto loss = neural_network->template Fit<false>(x_train, y_train);
+        auto loss = neural_network->Fit(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             auto test_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_test), y_test);

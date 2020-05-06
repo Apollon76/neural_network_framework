@@ -41,6 +41,7 @@ add_library(neural_network_framework SHARED
         layers/flatten.hpp
         optimizer.hpp
         neural_network.hpp
+        neural_network_interface.hpp
         utils.hpp
         loss.hpp
         data_processing/data_utils.hpp
@@ -52,6 +53,10 @@ add_library(neural_network_framework SHARED
         os_utils.hpp
         arma_math.hpp
         arma_math.cpp
+        callbacks/interface.hpp
+        callbacks/meta_callbacks.hpp
+        callbacks/performance_metrics_callback.hpp
+        callbacks/logging_callback.hpp
         ${PROTO_HEADER}
         ${PROTO_SRC})
 
