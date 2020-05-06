@@ -49,7 +49,7 @@ void Sample() {
     Tensor<double> inputs, outputs;
     GenerateInputs(inputs, outputs);
     for (int i = 0; i < 10000; i++) {
-        std::cout << "Loss: " << neural_network.Fit(inputs, outputs) << std::endl;
+        std::cout << "Loss: " << neural_network.FitOneIteration(inputs, outputs) << std::endl;
     }
     std::cout << arma::join_rows(neural_network.Predict(inputs).Values(), outputs.Values()) << std::endl;
     std::cout << neural_network.ToString() << std::endl;
@@ -68,13 +68,10 @@ NeuralNetwork<double> BuildMnistNN(std::unique_ptr<IOptimizer<double>> optimizer
 }
 
 NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optimizer) {
-    auto batch_size = 128;
     auto conv_filters = 2;
     auto img_size = 28;
     auto neural_network = NeuralNetwork<double>(std::move(optimizer),
-                                                std::make_unique<CategoricalCrossEntropyLoss<double>>(),
-                                                batch_size,
-                                                true);
+                                                std::make_unique<CategoricalCrossEntropyLoss<double>>());
     neural_network
             .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, conv_filters, 3, 3, ConvolutionPadding::Same))
             .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
@@ -96,7 +93,7 @@ void FitNN(NeuralNetwork<T> *neural_network,
            const std::optional<Tensor<T>> &y_test = std::nullopt) {
     Timer timer("Fitting ");
     for (int i = 0; i < epochs; i++) {
-        auto loss = neural_network->Fit(x_train, y_train);
+        auto loss = neural_network->FitOneIteration(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             if (x_test.has_value()) {
@@ -153,16 +150,15 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
     LOG(INFO) << "Start digit-recognizer neural network...";
 
     auto neural_network = BuildMnistNNConv(std::move(optimizer));
-    neural_network.AddCallback(EveryNthEpoch<double>(
+    auto callback = EveryNthEpoch<double>(
             10,
             ScoreCallback<double>("train score", [](const Tensor<double> &a,
                                                     const Tensor<double> &b) {
                 return nn_framework::scoring::one_hot_accuracy_score(a, b);
-            }, x_train, y_train))
-    );
+            }, x_train, y_train));
 //    neural_network.AddCallback<PerformanceMetricsCallback>();
 //    neural_network.AddCallback<LoggingCallback>();
-    neural_network.FitNN(40, x_train, y_train);
+    neural_network.Fit(x_train, y_train, 40, 128, true, callback);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;

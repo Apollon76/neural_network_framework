@@ -34,7 +34,7 @@ void FitNN(NeuralNetwork<double> *neural_network,
            const std::optional<Tensor<double>> &y_test = std::nullopt) {
     Timer timer("Fitting ");
     for (int i = 0; i < epochs; i++) {
-        auto loss = neural_network->Fit(x_train, y_train);
+        auto loss = neural_network->FitOneIteration(x_train, y_train);
         if (i % 5 == 0) {
             auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network->Predict(x_train), y_train);
             if (x_test.has_value()) {

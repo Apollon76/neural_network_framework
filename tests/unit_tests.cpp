@@ -195,7 +195,7 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
                     {2 * 5 + 3}
             });
     for (int i = 0; i < 10000; i++) {
-        network.Fit(inputs, outputs);
+        network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
@@ -230,7 +230,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
                     {1.0 / (exp(-(2 * 2 + 3)) + 1)},
             });
     for (int i = 0; i < 10000; i++) {
-        network.Fit(inputs, outputs);
+        network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
             dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
@@ -252,7 +252,7 @@ TEST(NeuralNetworkTest, TestConvolutionDependency) {
     auto outputs = expected_layer.Apply(inputs);
     double loss = 0;
     for (int i = 0; i < 1000; i++) {
-        loss = network.Fit(inputs, outputs);
+        loss = network.FitOneIteration(inputs, outputs);
     }
     EXPECT_LE(loss, 1e-8);
     TENSOR_SHOULD_BE_EQUAL_TO(
@@ -280,7 +280,7 @@ TEST(NeuralNetworkTest, TestComplexConvolutionDependency) {
     );
     double loss = 0;
     for (int i = 0; i < 400; i++) {
-        loss = network.Fit(inputs, outputs);
+        loss = network.FitOneIteration(inputs, outputs);
     }
     EXPECT_LE(loss, 0.01);
 }

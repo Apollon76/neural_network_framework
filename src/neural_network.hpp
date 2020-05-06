@@ -46,15 +46,10 @@ public:
 
     explicit NeuralNetwork(
             std::unique_ptr<IOptimizer<T>> _optimizer,
-            std::unique_ptr<ILoss<T>> _loss,
-            size_t batch_size = NoBatches,
-            bool shuffle = false
+            std::unique_ptr<ILoss<T>> _loss
     ) : layers(),
-        callbacks(),
         optimizer(std::move(_optimizer)),
-        loss(std::move(_loss)),
-        batch_size(batch_size),
-        shuffle(shuffle) {
+        loss(std::move(_loss)) {
     }
 
     NeuralNetwork &AddLayer(std::unique_ptr<ILayer<T>> layer) {
@@ -65,16 +60,6 @@ public:
     template<template<class> class LayerType, typename... Args>
     NeuralNetwork &AddLayer(Args &&... args) {
         return AddLayer(std::make_unique<LayerType<T>>(std::forward<Args>(args)...));
-    }
-
-    NeuralNetwork &AddCallback(std::shared_ptr<ANeuralNetworkCallback<T>> callback) {
-        callbacks.emplace_back(callback);
-        return *this;
-    }
-
-    template<template<class> class CallbackType, typename... Args>
-    NeuralNetwork &AddCallback(Args &&... args) {
-        return AddCallback(std::make_shared<CallbackType<T>>(std::forward<Args>(args)...));
     }
 
     [[nodiscard]] ILayer<T> *GetLayer(size_t layer_id) const {
@@ -102,12 +87,14 @@ public:
         return output.str();
     }
 
-
-    void FitNN(int epochs, const Tensor<T> &input, const Tensor<T> &output) {
-        auto callback = CombinedNeuralNetworkCallback(callbacks);
+    void Fit(const Tensor<T> &input, const Tensor<T> &output, int epochs, size_t batch_size = NoBatches,
+             bool shuffle = false, std::shared_ptr<ANeuralNetworkCallback<T>> callback = nullptr) {
+        if (callback == nullptr) {
+            callback = std::make_shared<CombinedNeuralNetworkCallback<T>>();
+        }
         for (int i = 0; i < epochs; i++) {
-            auto fitEpochCallback = callback.Fit(this, i);
-            DoFit(input, output, callback);
+            auto fitEpochCallback = callback->Fit(this, i);
+            DoFit(input, output, batch_size, shuffle, *callback);
             if (fitEpochCallback != std::nullopt) {
                 // todo (sivukhin): try to avoid unnecessary calculation here
                 auto prediction = Predict(input);
@@ -120,9 +107,9 @@ public:
         }
     }
 
-    double Fit(const Tensor<T> &input, const Tensor<T> &output) {
-        auto callback = CombinedNeuralNetworkCallback(callbacks);
-        DoFit(input, output, callback);
+    double FitOneIteration(const Tensor<T> &input, const Tensor<T> &output) {
+        auto callback = CombinedNeuralNetworkCallback<T>();
+        DoFit(input, output, NoBatches, false, callback);
         return loss->GetLoss(Predict(input), output);
     }
 
@@ -140,7 +127,8 @@ public:
     }
 
 private:
-    void DoFit(const Tensor<T> &input, const Tensor<T> &output, ANeuralNetworkCallback<T> &callback) {
+    void DoFit(const Tensor<T> &input, const Tensor<T> &output, size_t batch_size, bool shuffle,
+               ANeuralNetworkCallback<T> &callback) {
         auto real_batch_size = (batch_size != NoBatches) ? batch_size : input.D[0];
 
         std::vector<Data<T>> batches = GenerateBatches<T>(Data<T>{input, output}, real_batch_size, shuffle);
@@ -196,9 +184,6 @@ private:
     }
 
     std::vector<std::unique_ptr<ILayer<T>>> layers;
-    std::vector<std::shared_ptr<ANeuralNetworkCallback<T>>> callbacks;
     std::unique_ptr<IOptimizer<T>> optimizer;
     std::unique_ptr<ILoss<T>> loss;
-    size_t batch_size;
-    bool shuffle;
 };

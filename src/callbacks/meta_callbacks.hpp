@@ -17,6 +17,8 @@
 template<typename T>
 class CombinedNeuralNetworkCallback : public ANeuralNetworkCallback<T> {
 public:
+    explicit CombinedNeuralNetworkCallback() {}
+
     explicit CombinedNeuralNetworkCallback(std::vector<std::shared_ptr<ANeuralNetworkCallback<T>>> _callbacks)
             : callbacks(_callbacks) {}
 

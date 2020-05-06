@@ -23,7 +23,7 @@ namespace nn_framework::serialization::hdf5 {
             auto optimizer = load_optimizer<double>(training_config);
             auto loss = get_loss<double>(training_config);
 
-            auto model = NeuralNetwork<double>(std::move(optimizer), std::move(loss), NoBatches, true); // todo batches and shuffle are not model params
+            auto model = NeuralNetwork<double>(std::move(optimizer), std::move(loss));
 
             auto mapping = load_layers(model_config, &model);
 
