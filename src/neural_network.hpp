@@ -18,27 +18,6 @@ using nn_framework::data_processing::Data;
 
 static const size_t NoBatches = -1;
 
-template<bool Enabled, typename T, typename Container = std::vector<Data<T>>, size_t Size = 100, char Symbol = '#'>
-struct ProgressBar {
-    using iterator = typename Container::iterator;
-    using value = Container;
-
-    static Container Construct(const Container &container) {
-        return Container(container.begin(), container.end());
-    }
-};
-
-template<typename T, typename Container, size_t Size, char Symbol>
-struct ProgressBar<true, T, Container, Size, Symbol> {
-    using iterator = typename Container::iterator;
-    using value = pbar::ProgressBar<typename Container::iterator>;
-
-    static ProgressBar::value Construct(Container &container) {
-        return ProgressBar::value(container.begin(), container.end(), Size, Symbol);
-    }
-};
-
-
 template<typename T>
 class NeuralNetwork : public INeuralNetwork<T> {
 public:
@@ -151,24 +130,17 @@ private:
                 forwardAction.value()(inter_outputs.back());
             }
         }
-//            DLOG(INFO) << "Expected outputs: " << std::endl << batch.output.ToString() << std::endl
-//                       << "Actual outputs: " << std::endl << inter_outputs.back().ToString();
         auto gradientsAction = callback.OptimizerGradients(batch.output);
         Tensor<T> last_output_gradient = loss->GetGradients(inter_outputs.back(), batch.output);
         if (gradientsAction != std::nullopt) {
             gradientsAction.value()(last_output_gradient);
         }
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; i--) {
-//                DLOG(INFO) << "Inputs: " << std::endl << inter_outputs[i].ToString() << std::endl
-//                           << "Gradients: " << std::endl << last_output_gradient.ToString();
             auto backwardAction = callback.LayerBackwardPass(layers[i].get(), inter_outputs[i], last_output_gradient);
             auto gradients = layers[i]->PullGradientsBackward(inter_outputs[i], last_output_gradient);
             if (backwardAction != std::nullopt) {
                 backwardAction.value()(gradients);
             }
-//            DLOG(INFO) << "Found gradients: "
-//                           << gradients.input_gradients.ToString() << std::endl
-//                           << gradients.layer_gradients.ToString() << std::endl;
             auto gradientStepAction = callback.OptimizerGradientStep(layers[i].get(), gradients.layer_gradients);
             auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients, layers[i].get());
             if (gradientStepAction != std::nullopt) {
