@@ -2,6 +2,10 @@
 
 #include "interface.h"
 
+#include <armadillo>
+#include <cereal/types/polymorphic.hpp>
+#include <src/tensor.hpp>
+
 
 template<typename T>
 class DropoutLayer : public ILayer<T> {
@@ -52,9 +56,17 @@ public:
 
     void ApplyGradients(const Tensor<T> &gradients) override {}
 
+    template<class Archive>
+    void serialize(Archive &ar) {
+        ar(p);
+    }
+
 private:
     double p;
     Tensor<T> mask;
     std::mt19937 engine;
     std::uniform_real_distribution<double> distr;
 };
+
+CEREAL_REGISTER_TYPE(DropoutLayer<double>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, DropoutLayer<double>)
