@@ -18,12 +18,12 @@ public:
 
     [[nodiscard]] virtual std::string GetName() const = 0;
 
-    [[nodiscard]] virtual Tensor<T> Apply(const Tensor<T> &) const = 0;
+    [[nodiscard]] virtual Tensor<T> Apply(const Tensor<T> &) = 0;
 
     [[nodiscard]] virtual Gradients<T> PullGradientsBackward(
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
-    ) const = 0;
+    ) = 0;
 
     virtual void ApplyGradients(const Tensor<T> &gradients) = 0;
 

@@ -37,7 +37,7 @@ public:
         return "Conv2d[" + FormatDimensions(weights) + " (including bias)]";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
         auto result = Tensor<T>::filled({input.D[0], weights.D[0], input.D[2], input.D[3]}, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {
@@ -59,7 +59,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &input,
             const Tensor<T> &output_gradients
-    ) const override {
+    ) override {
         auto weightsGradients = Tensor<T>::filled(weights.D, arma::fill::zeros);
         auto inputGradients = Tensor<T>::filled(input.D, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {

@@ -36,7 +36,7 @@ public:
         return "Dense[" + FormatDimensions(weights_and_bias) + " (including bias)]";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
         return Tensor<T>(
                 {input.D[0], weights_and_bias.D[1]},
                 arma::affmul(weights_and_bias.Values().t(), input.Values().t()).t()
@@ -46,7 +46,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
-    ) const override {
+    ) override {
         auto weights = weights_and_bias.Values().head_rows(weights_and_bias.D[0] - 1);
         auto bias = weights_and_bias.Values().tail_rows(1);
         return Gradients<T>{

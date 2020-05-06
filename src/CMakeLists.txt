@@ -37,6 +37,7 @@ add_library(neural_network_framework SHARED
         tensor.hpp
         layers/activations.hpp
         layers/dense.hpp
+        layers/dropout.hpp
         layers/convolution2d.hpp
         layers/flatten.hpp
         optimizer.hpp

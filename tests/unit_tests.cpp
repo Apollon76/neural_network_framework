@@ -10,6 +10,7 @@
 #include "utils.h"
 #include <iostream>
 #include <src/data_processing/data_utils.hpp>
+#include <src/layers/dropout.hpp>
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
@@ -198,7 +199,7 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
         network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
+            dynamic_cast<DenseLayer<double>*>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
                             {2},
@@ -233,7 +234,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
         network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
+            dynamic_cast<DenseLayer<double>*>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
                             {2},
@@ -256,7 +257,7 @@ TEST(NeuralNetworkTest, TestConvolutionDependency) {
     }
     EXPECT_LE(loss, 1e-8);
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights(),
+            dynamic_cast<Convolution2dLayer<double>*>(network.GetLayer(0))->GetWeights(),
             expected_layer.GetWeights(),
             1e-1
     );
@@ -662,7 +663,7 @@ TEST(ShuffleData, TestShuffleWithGreaterRank) {
             {
                     {
                             {1, 2, 3},
-                            {4, 5, 6},
+                            {4, 5,  6},
                     },
                     {
                             {7, 8, 9},
@@ -683,7 +684,7 @@ TEST(ShuffleData, TestShuffleWithGreaterRank) {
                                          },
                                          {
                                                  {1, 2, 3},
-                                                 {4, 5, 6},
+                                                 {4, 5,  6},
                                          }
                                  }),
             Tensor<double>::init({0.2, 0.1})
@@ -696,10 +697,10 @@ TEST(ShuffleData, TestShuffleWithGreaterRank) {
 TEST(Batches, RandomBatches) {
     auto input = Tensor<double>::init(
             {
-                            {1, 2, 3},
-                            {4, 5, 6},
-                            {7, 8, 9},
-                            {9, 10, 11}
+                    {1, 2,  3},
+                    {4, 5,  6},
+                    {7, 8,  9},
+                    {9, 10, 11}
             }
     );
     auto output = Tensor<double>::init({0.1, 0.2, 0.3, 0.4});
@@ -711,7 +712,7 @@ TEST(Batches, RandomBatches) {
             nn_framework::data_processing::Data<double>{
                     Tensor<double>::init({
                                                  {9, 10, 11},
-                                                 {4, 5, 6},
+                                                 {4, 5,  6},
 
                                          }),
                     Tensor<double>::init({0.4, 0.2})
@@ -735,18 +736,18 @@ TEST(Batches, RandomBatches) {
 TEST(Batches, Batches) {
     auto input = Tensor<double>::init(
             {
-                {
-                     {1, 2, 3},
-                     {4, 5, 6},
-                     {7, 8, 9},
-                     {9, 10, 11}
-             },
-                {
-                        {1, 1, 1},
-                        {2, 2, 2},
-                        {3, 3, 3},
-                        {4, 4, 4}
-                },
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6},
+                            {7, 8, 9},
+                            {9, 10, 11}
+                    },
+                    {
+                            {1, 1, 1},
+                            {2, 2, 2},
+                            {3, 3, 3},
+                            {4, 4,  4}
+                    },
             }
     );
     auto output = Tensor<double>::init({0.1, 0.2});
@@ -782,4 +783,63 @@ TEST(Batches, Batches) {
     TENSOR_SHOULD_BE_EQUAL_TO(actual[1].input, expected[1].input);
     TENSOR_SHOULD_BE_EQUAL_TO(actual[0].output, expected[0].output);
     TENSOR_SHOULD_BE_EQUAL_TO(actual[1].output, expected[1].output);
+}
+
+
+TEST(DropoutLayerTest, TestPullGradientsBackward) {
+    auto layer = DropoutLayer<double>(0.5);
+    auto input = Tensor<double>::init(
+            {
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6}
+                    },
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6}
+                    }
+            }
+    );
+    auto expected = Tensor<double>::init(
+            {
+                    {
+                            {2, 4, 6},
+                            {8, 10, 0}
+                    },
+                    {
+                            {0, 0, 6},
+                            {0, 0,  0}
+                    }
+            }
+    );
+    auto actual = layer.Apply(input);
+    TENSOR_SHOULD_BE_EQUAL_TO(actual, expected);
+
+    auto grad = Tensor<double>::init(
+            {
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6}
+                    },
+                    {
+                            {1, 2, 3},
+                            {4, 5, 6}
+                    }
+            }
+    );
+    auto expected_grad = Tensor<double>::init(
+            {
+                    {
+                            {1, 2, 3},
+                            {4, 5, 0}
+                    },
+                    {
+                            {0, 0, 3},
+                            {0, 0, 0}
+                    }
+            }
+    );
+    auto grad_actual = layer.PullGradientsBackward(input, grad);
+    TENSOR_SHOULD_BE_EQUAL_TO(grad_actual.input_gradients, expected_grad);
+    TENSOR_SHOULD_BE_EQUAL_TO(grad_actual.layer_gradients, Tensor<double>());
 }

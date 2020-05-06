@@ -33,7 +33,7 @@ public:
         return "Flatten";
     }
 
-    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+    [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) override {
         auto rows = input.D[0];
         auto cols = std::accumulate(input.D.begin() + 1, input.D.end(), 1, std::multiplies<T>());
         auto tensor = Tensor<T>(
@@ -52,7 +52,7 @@ public:
     [[nodiscard]] Gradients<T> PullGradientsBackward(
             const Tensor<T> &,
             const Tensor<T> &output_gradients
-    ) const override {
+    ) override {
         auto rows = output_gradients.D[0];
         std::vector<int> current_dim = input_dim;
         current_dim[0] = rows;
