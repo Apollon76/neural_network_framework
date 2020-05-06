@@ -18,7 +18,7 @@ docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework/dat
 
 ## Run benchmark
 ```
-cd benchmarks && ./run.sh
+cd benchmarks && sudo ./run.sh
 ```
 
 ## Run docker for local developement in JetBrains Clion:
