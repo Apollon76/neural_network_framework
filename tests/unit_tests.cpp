@@ -803,12 +803,12 @@ TEST(DropoutLayerTest, TestPullGradientsBackward) {
     auto expected = Tensor<double>::init(
             {
                     {
-                            {2, 4, 6},
-                            {8, 10, 0}
+                            {2, 4, 0},
+                            {0, 10, 0}
                     },
                     {
-                            {0, 0, 6},
-                            {0, 0,  0}
+                            {0, 4, 0},
+                            {0, 0,  12}
                     }
             }
     );
@@ -830,12 +830,12 @@ TEST(DropoutLayerTest, TestPullGradientsBackward) {
     auto expected_grad = Tensor<double>::init(
             {
                     {
-                            {1, 2, 3},
-                            {4, 5, 0}
+                            {1, 2, 0},
+                            {0, 5, 0}
                     },
                     {
-                            {0, 0, 3},
-                            {0, 0, 0}
+                            {0, 2, 0},
+                            {0, 0, 6}
                     }
             }
     );
