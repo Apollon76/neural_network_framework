@@ -251,6 +251,13 @@ void MnistPng(const std::string &data_path, bool scale) {
 int main(int argc, char **argv) {
     google::InitGoogleLogging(argv[0]);
 
+    arma::arma_config cfg;
+    std::cout << "blas enabled: " << cfg.blas << std::endl;
+    std::cout << "openmp enabled: " << cfg.openmp << std::endl;
+    std::cout << "lapack enabled: " << cfg.lapack << std::endl;
+    std::cout << "superlu enabled: " << cfg.superlu << std::endl;
+    std::cout << "mp_threads enabled: " << cfg.mp_threads << std::endl;
+
     cxxopts::Options options("nn framework main");
     options.add_options()
             ("d,data", "path to data", cxxopts::value<std::string>()->default_value("../.."));

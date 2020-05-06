@@ -16,6 +16,10 @@ RUN apt-get update && apt-get install -y \
 	autoconf \
     libopenblas-dev \
     liblapack-dev \
+    libarpack2-dev \
+    libsuperlu-dev \
+    libomp5 \
+    libomp-dev \
     libgtest-dev \
     python3 \
     python3-pip \
