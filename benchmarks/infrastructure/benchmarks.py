@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import subprocess
-import tempfile
 import json
 import re
 import os
+import random
+import string
 
 
 def prepare(test_name):
@@ -20,9 +21,23 @@ def build_docker(path):
     return image_id
 
 
+# Do it manually because on MacOS tempfile.mkdtemp() creates dir on path, which can't be mounted by docker
+def mktempdir():
+    rand_name = ''.join([random.choice(string.ascii_letters) for x in range(20)])
+    path = f'/tmp/tmp-{rand_name}'
+    os.makedirs(path)
+    return path
+
+
+def mktempfile():
+    path = os.path.join(mktempdir(), 'file')
+    open(path, 'w').close()
+    return path
+
+
 def run_nn_framework(test_name, data_path, epochs, batch_size):
     repo_path = os.path.dirname(os.getcwd())
-    results_file = tempfile.mkstemp()[1]
+    results_file = mktempfile()
     build_cache_path = '/tmp/nn-framework-benchmarks-build-cache'
 
     image_id = build_docker('../docker')
@@ -64,7 +79,7 @@ def run_nn_framework(test_name, data_path, epochs, batch_size):
 
 def run_keras(test_name, data_path, epochs, batch_size):
     repo_path = os.path.dirname(os.getcwd())
-    results_file = tempfile.mkstemp()[1]
+    results_file = mktempfile()
 
     image_id = build_docker('tf-docker')
 
@@ -99,7 +114,7 @@ def run_keras(test_name, data_path, epochs, batch_size):
 
 def plot_results(test_name, keras_result, nn_framework_result):
     repo_path = os.path.dirname(os.getcwd())
-    results_dir = tempfile.mkdtemp()
+    results_dir = mktempdir()
     images_dir = os.path.join(os.getcwd(), 'benchmark-results', test_name)
     os.makedirs(images_dir, exist_ok=True)
 
