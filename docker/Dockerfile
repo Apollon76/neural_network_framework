@@ -56,14 +56,6 @@ RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
 
-# Benchmark deps
-RUN python3 -m pip install --upgrade pip==20.0.2 && python3 -m pip install \
-    tensorflow==2.1.0 \
-    keras==2.3.1 \
-    numpy==1.18.2 \
-    pandas==1.0.3 \
-    sklearn==0.0
-
 # Csv:
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
 RUN mkdir /usr/include/csv && cp /tmp/csv/csv.h /usr/include/csv

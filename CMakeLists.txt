@@ -9,6 +9,5 @@ include(cmake/Sanitize.cmake)
 
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(benchmark)
 add_subdirectory(examples)
 add_subdirectory(benchmarks)
