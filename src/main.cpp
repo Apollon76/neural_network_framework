@@ -12,6 +12,7 @@
 #include <src/optimizer.hpp>
 #include <src/utils.hpp>
 #include <src/layers/dense.hpp>
+#include <src/layers/dropout.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
 #include <src/callbacks/performance_metrics_callback.hpp>
@@ -75,6 +76,7 @@ NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optim
     neural_network
             .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, conv_filters, 3, 3, ConvolutionPadding::Same))
             .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
+            .AddLayer(std::make_unique<DropoutLayer<double>>(0.1))
             .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, conv_filters, img_size, img_size}))
             .AddLayer(std::make_unique<DenseLayer<double>>(img_size * img_size * conv_filters, 100))
             .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())

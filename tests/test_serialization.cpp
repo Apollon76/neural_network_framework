@@ -7,6 +7,7 @@
 #include <src/neural_network.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
+#include <src/layers/dropout.hpp>
 
 #include "utils.h"
 
@@ -156,5 +157,27 @@ TEST(SerializationTest, TestSaveConv2d) {
         iarchive(deserialized);
 
         ASSERT_EQ(deserialized.GetName(), "Conv2d[2 x 1 x 3 x 4 (including bias)]");
+    }
+}
+
+TEST(SerializationTest, TestSaveDropout) {
+    auto filename = "dropout_test.json";
+    TensorDimensions shape = {1, 2, 3};
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        auto layer = DropoutLayer<double>(0.4);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        DropoutLayer<double> deserialized;
+        iarchive(deserialized);
+
+        ASSERT_EQ(deserialized.ToString(), "Dropout: p=0.400000");
     }
 }
