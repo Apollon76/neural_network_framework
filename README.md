@@ -4,6 +4,7 @@ A study project inspired by [this desciption](https://github.com/yandexdataschoo
 # How to run
 
 The easiest way to build, run and develop is by using docker.
+Make sure that docker has enough RAM (8GB recommended). 
 
 ## Unarchive mnist dataset
 ```
@@ -13,7 +14,7 @@ unzip data/kaggle-digit-recognizer/digit-recognizer.zip -d data/kaggle-digit-rec
 ## Run main
 ```
 docker-compose build
-docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework/data
+docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework
 ```
 
 ## Run benchmark
