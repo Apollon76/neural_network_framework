@@ -160,7 +160,7 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
             }, x_train, y_train));
 //    neural_network.AddCallback<PerformanceMetricsCallback>();
 //    neural_network.AddCallback<LoggingCallback>();
-    neural_network.Fit(x_train, y_train, 4, 128, true, callback);
+    neural_network.Fit(x_train, y_train, 40, 128, true, callback);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
