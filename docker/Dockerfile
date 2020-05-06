@@ -16,6 +16,10 @@ RUN apt-get update && apt-get install -y \
 	autoconf \
     libopenblas-dev \
     liblapack-dev \
+    libarpack2-dev \
+    libsuperlu-dev \
+    libomp5 \
+    libomp-dev \
     libgtest-dev \
     python3 \
     python3-pip \
@@ -26,7 +30,9 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libpng-dev \
     libhdf5-dev \
-    libboost-all-dev
+    libboost-all-dev \
+    libprotobuf-dev \
+    protobuf-compiler
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -56,14 +62,6 @@ RUN make
 RUN cp libgtest.a /usr/lib
 RUN cp libgtest_main.a /usr/lib
 
-# Benchmark deps
-RUN python3 -m pip install --upgrade pip==20.0.2 && python3 -m pip install \
-    tensorflow==2.1.0 \
-    keras==2.3.1 \
-    numpy==1.18.2 \
-    pandas==1.0.3 \
-    sklearn==0.0
-
 # Csv:
 RUN git clone https://github.com/ben-strasser/fast-cpp-csv-parser.git /tmp/csv
 RUN mkdir /usr/include/csv && cp /tmp/csv/csv.h /usr/include/csv
@@ -75,17 +73,6 @@ RUN cp /tmp/cxxopts/include/cxxopts.hpp /usr/include/cxxopts.hpp
 # JSON
 RUN wget https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp
 RUN mkdir -p /usr/include/nlohmann && mv json.hpp /usr/include/nlohmann/json.hpp
-
-# protobuf
-RUN mkdir -p /tmp/protobuf
-WORKDIR /tmp/protobuf
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protobuf-all-3.11.4.tar.gz \
- && tar -xzf protobuf-all-3.11.4.tar.gz \
- && rm protobuf-all-3.11.4.tar.gz
-WORKDIR /tmp/protobuf/protobuf-3.11.4
-RUN ./configure
-RUN make -j$(nproc) && make check && make install
-RUN ldconfig
 
 # cereal
 RUN git clone https://github.com/USCiLab/cereal.git /tmp/cereal

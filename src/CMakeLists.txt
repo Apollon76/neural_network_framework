@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.9)
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
+find_package(OpenMP REQUIRED)
+include_directories(${OpenMP_INCLUDE_DIRS})
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+
 find_package(glog REQUIRED)
 include_directories(${GLOG_INCLUDE_DIRS})
 
@@ -63,6 +69,7 @@ add_library(neural_network_framework SHARED
 
 target_link_libraries(neural_network_framework
         ${ARMADILLO_LIBRARIES}
+        ${OpenMP_LIBS}
         pthread
         glog::glog
         ${PROTOBUF_LIBRARY}
