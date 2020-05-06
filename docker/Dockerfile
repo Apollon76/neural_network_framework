@@ -26,7 +26,9 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libpng-dev \
     libhdf5-dev \
-    libboost-all-dev
+    libboost-all-dev \
+    libprotobuf-dev \
+    protobuf-compiler
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -67,17 +69,6 @@ RUN cp /tmp/cxxopts/include/cxxopts.hpp /usr/include/cxxopts.hpp
 # JSON
 RUN wget https://github.com/nlohmann/json/releases/download/v3.7.3/json.hpp
 RUN mkdir -p /usr/include/nlohmann && mv json.hpp /usr/include/nlohmann/json.hpp
-
-# protobuf
-RUN mkdir -p /tmp/protobuf
-WORKDIR /tmp/protobuf
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protobuf-all-3.11.4.tar.gz \
- && tar -xzf protobuf-all-3.11.4.tar.gz \
- && rm protobuf-all-3.11.4.tar.gz
-WORKDIR /tmp/protobuf/protobuf-3.11.4
-RUN ./configure
-RUN make -j$(nproc) && make check && make install
-RUN ldconfig
 
 # cereal
 RUN git clone https://github.com/USCiLab/cereal.git /tmp/cereal
