@@ -53,7 +53,7 @@ public:
         return optimizer.get();
     }
 
-    [[nodiscard]] ILoss<T> *GetLoss() const {
+    [[nodiscard]] ILoss<T> *GetLoss() const override {
         return loss.get();
     }
 
