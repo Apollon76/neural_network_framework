@@ -31,7 +31,7 @@ namespace {
 
 class IInitializer {
 public:
-    virtual Tensor<double> generate(TensorDimensions dimensions) const = 0;
+    [[nodiscard]] virtual Tensor<double> generate(TensorDimensions dimensions) const = 0;
 };
 
 class ConstInitializer : public  IInitializer {
@@ -41,7 +41,7 @@ public:
     {
     }
 
-    Tensor<double> generate(TensorDimensions dimensions) const override {
+    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         int val = value;
         return Tensor<double>::filledRandom(dimensions, [val](){return val; });
     }
@@ -56,7 +56,7 @@ public:
     {
     }
 
-    Tensor<double> generate(TensorDimensions dimensions) const override {
+    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         std::uniform_real_distribution<double> distribution(minval, maxval);
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
     }
@@ -71,7 +71,7 @@ public:
     {
     }
 
-    Tensor<double> generate(TensorDimensions dimensions) const override {
+    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         truncated_normal_distribution distribution(mean, stddev);
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
     }
@@ -81,7 +81,7 @@ private:
 
 class GlorotNormalInitializer : public IInitializer {
 public:
-    Tensor<double> generate(TensorDimensions dimensions) const override {
+    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         truncated_normal_distribution distribution(0, sqrt(2.0 / (dimensions.front() + dimensions.back())));
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
     }
@@ -89,7 +89,7 @@ public:
 
 class GlorotUniformInitializer : public IInitializer {
 public:
-    Tensor<double> generate(TensorDimensions dimensions) const override {
+    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         double limit = sqrt(6.0 / (dimensions.front() + dimensions.back()));
         std::uniform_real_distribution<double> distribution(-limit, limit);
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });

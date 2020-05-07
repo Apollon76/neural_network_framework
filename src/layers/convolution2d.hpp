@@ -115,7 +115,7 @@ public:
         padding = p;
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) {}
 
 private:
     Tensor<T> weights;

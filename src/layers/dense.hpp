@@ -106,6 +106,8 @@ public:
     }
 
     void Initialize(const std::unique_ptr<IInitializer>& initializer) {
+        Tensor<T> result = initializer->generate(weights_and_bias.D).template ConvertTo<T>();
+        weights_and_bias = result;
     };
 
 private:
