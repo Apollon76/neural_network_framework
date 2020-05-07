@@ -18,7 +18,6 @@
 #include <src/layers/max_pooling2d.hpp>
 #include <src/callbacks/performance_metrics_callback.hpp>
 #include <src/callbacks/logging_callback.hpp>
-#include <src/os_utils.hpp>
 #include <src/tensor.hpp>
 
 void GenerateInputs(Tensor<double> &inputs, Tensor<double> &outputs) {
@@ -67,6 +66,24 @@ NeuralNetwork<double> BuildMnistNN(std::unique_ptr<IOptimizer<double>> optimizer
             .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
 
     return neural_network;
+}
+
+std::tuple<Tensor<double>, Tensor<double>> LoadMnist(const std::string &path, bool skip_header) {
+    std::cout << "Loading mnist dataset from " << path << std::endl;
+    Timer timer("Load of " + path, true);
+    auto csv_data_provider = nn_framework::io::CsvReader(path, skip_header);
+    auto data = Tensor<int>::fromVector(csv_data_provider.LoadData<int>());
+    auto X = Tensor<int>({data.D[0], data.D[1] - 1}, data.Values().tail_cols(data.D[1] - 1));
+    auto y = Tensor<int>({data.D[0], 1}, data.Values().head_cols(1));
+    auto y_one_hot = nn_framework::data_processing::OneHotEncoding(y);
+    return {X.ConvertTo<double>(), y_one_hot.ConvertTo<double>()};
+}
+
+Tensor<double> LoadMnistX(const std::string &path, bool skip_header) {
+    Timer timer("Load of " + path, true);
+    auto csv_data_provider = nn_framework::io::CsvReader(path, skip_header);
+    auto data = Tensor<int>::fromVector(csv_data_provider.LoadData<int>());
+    return data.ConvertTo<double>();
 }
 
 NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optimizer) {

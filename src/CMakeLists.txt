@@ -58,7 +58,6 @@ add_library(neural_network_framework SHARED
         io/filesystem.hpp
         serialization/hdf5_serialization.hpp
         scoring/scoring.hpp
-        os_utils.hpp
         arma_math.hpp
         arma_math.cpp
         callbacks/interface.hpp

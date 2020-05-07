@@ -1,36 +1,65 @@
 # Neural network framework
-A study project inspired by [this desciption](https://github.com/yandexdataschool/lsml-projects/blob/master/nn.md).
+Фреймворк для обучения нейронных сетекй - учебный проект в рамках [курса шада](https://github.com/yandexdataschool/lsml-projects/blob/master/nn.md).
 
-# How to run
+## О проекте
 
-The easiest way to build, run and develop is by using docker.
-Make sure that docker has enough RAM (8GB recommended). 
+Проект написан на c++ с использованием библиотеки Armadillo.
 
-## Unarchive mnist dataset
+## Структура проекта
+
+```docker``` - описание docker-образа со всеми зависимостями
+
+```src``` - исходный код проекта
+
+```tests``` - тесты
+
+```examples``` - простые примеры использования библиотеки и описания к ним
+
+```examples``` - бенчмарки и мехака для их запуска
+
+```data``` - данные или скрипты для их получения, которые используется в примерах
+
+## Знакомство с фрейморком
+
+Для работы с проектом потребуется docker и docker-compose. \
+Мы рекомендуем дать докеру хотя бы 8GB оперативной памяти.
+
+#### Примеры
+Рекомендуем посмотреть на примеры работы с фреймворком в папке ```examples``` (там же есть более подробный [readme](../blob/master/examples/README.md)) о них).
+
+#### Бенчмарки
+Также рекомендуем взглянуть на [результаты бенчмарков](../blob/master/benchmarks/README.md).
+
+#### Тесты
+Для запуска тестов можно выполнить следующую команду:
+
 ```
-unzip data/kaggle-digit-recognizer/digit-recognizer.zip -d data/kaggle-digit-recognizer/ 
+docker-compose run -v $(pwd):/nn_framework nn_framework test
 ```
 
-## Run main
-```
-docker-compose build
-docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework
-```
+## Разработка
 
-## Run benchmark
-```
-cd benchmarks && ./run.sh
-```
-
-## Run docker for local developement in JetBrains Clion:
+#### JetBrains Clion 
+Для разработки в Clion удобнее всего использовать remote toolchain в докере:
 ```
 docker-compose up --build
 ```
 
-For remote toolchain setup follow the instructions on this link: https://blog.jetbrains.com/clion/2018/09/initial-remote-dev-support-clion/
+Инструкции по её настройке есть [тут](https://blog.jetbrains.com/clion/2018/09/initial-remote-dev-support-clion/).
 
 ```
 ssh port: 2223
 ssh user: user
 ssh password: password
+```
+
+#### Запуск main в докере
+```
+docker-compose build
+docker-compose run -v $(pwd):/nn_framework nn_framework run -d /nn_framework
+```
+
+#### Запуск бенчмарков
+```
+cd benchmarks && ./run.sh
 ```

@@ -96,6 +96,9 @@ RUN wget https://github.com/BlueBrain/HighFive/archive/v2.2.tar.gz && tar -xzf v
 WORKDIR /tmp/HighFive/HighFive-2.2
 RUN cmake -DHIGHFIVE_EXAMPLES=OFF && make install
 
+# Deps for hdf5 example
+RUN python3 -m pip install --upgrade pip==20.0.2 && python3 -m pip install tensorflow==2.1.0 pandas==1.0.3
+
 # sshd:
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8

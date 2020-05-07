@@ -9,17 +9,26 @@ case "$1" in
     mkdir $BUILD_DIR
     cd $BUILD_DIR
     cmake /nn_framework -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
-	make
+	  make
     ./src/main "${@:2}"
+    ;;
+"test")
+    BUILD_DIR=/nn_framework_bin
+    rm -rf $BUILD_DIR
+    mkdir $BUILD_DIR
+    cd $BUILD_DIR
+    cmake /nn_framework -DCMAKE_BUILD_TYPE=Release
+	  make
+	  ./tests/unit_tests
     ;;
 "sshd")
     /usr/sbin/sshd -D
     ;;
-"benchmark")
-    exec "/nn_framework/benchmark/run.sh"
-    ;;
-"example-keras-format")
+"example-hdf5")
     exec "/nn_framework/examples/hdf5/run.sh"
+    ;;
+"example-digit-recognizer")
+    exec "/nn_framework/examples/digit_recognizer/run.sh"
     ;;
 *)
     exec "$@"

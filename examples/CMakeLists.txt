@@ -2,3 +2,6 @@ cmake_minimum_required(VERSION 3.9)
 
 add_executable(hdf5_example hdf5/hd5_example.cpp)
 target_link_libraries(hdf5_example neural_network_framework)
+
+add_executable(digit_recognizer digit_recognizer/digit_recognizer.cpp)
+target_link_libraries(digit_recognizer neural_network_framework)

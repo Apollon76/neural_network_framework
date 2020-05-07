@@ -4,15 +4,24 @@
 #include <src/neural_network.hpp>
 #include <src/optimizer.hpp>
 #include <src/utils.hpp>
-#include <src/os_utils.hpp>
 #include <src/tensor.hpp>
 #include <src/serialization/hdf5_serialization.hpp>
+
+std::tuple<Tensor<double>, Tensor<double>> LoadMnist(const std::string &path) {
+    Timer timer("Load of " + path, true);
+    auto csv_data_provider = nn_framework::io::CsvReader(path, false);
+    auto data = Tensor<int>::fromVector(csv_data_provider.LoadData<int>());
+    auto X = Tensor<int>({data.D[0], data.D[1] - 1}, data.Values().tail_cols(data.D[1] - 1));
+    auto y = Tensor<int>({data.D[0], 1}, data.Values().head_cols(1));
+    auto y_one_hot = nn_framework::data_processing::OneHotEncoding(y);
+    return {X.ConvertTo<double>(), y_one_hot.ConvertTo<double>()};
+}
 
 void load_model_and_evaluate(const std::string& model_path, const std::string& data_path) {
     auto neural_network = nn_framework::serialization::hdf5::Hdf5Serializer::LoadModel(model_path);
 
-    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv", false);
-    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv", false);
+    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
+    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
@@ -41,8 +50,8 @@ void FitNN(NeuralNetwork<T> *neural_network, int epochs, const Tensor<T> &x_trai
 }
 
 void train_model_and_save(const std::string& save_to_path, const std::string& data_path) {
-    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv", false);
-    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv", false);
+    auto[x_train, y_train] = LoadMnist(data_path + "/mnist/mnist_train.csv");
+    auto[x_test, y_test] = LoadMnist(data_path + "/mnist/mnist_test.csv");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
 
