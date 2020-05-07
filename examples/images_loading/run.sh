@@ -2,7 +2,7 @@
 
 set -e
 
-cd ./../../data/mnist-png
+cd /nn_framework/data/mnist-png
 ./unpack.sh
 
 BUILD_DIR=$(mktemp -d)
