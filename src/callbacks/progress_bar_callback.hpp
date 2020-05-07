@@ -11,7 +11,7 @@ template<typename T>
 class ProgressBarCallback : public ANeuralNetworkCallback<T> {
 public:
     virtual std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
-    Fit(const INeuralNetwork<T> *nn, int epoch) {
+    Fit(const INeuralNetwork<T> *, int epoch) {
         std::cout << "Epoch " << epoch << std::endl;
         return [this](const Tensor<T> &, double loss) {
             loss_history.push_back(loss);
@@ -21,7 +21,7 @@ public:
     }
 
     virtual std::optional<std::function<void()>>
-    FitBatch(const nn_framework::data_processing::Data<T> &batch_data, int batch_id, int batches_count) {
+    FitBatch(const nn_framework::data_processing::Data<T> &, int batch_id, int batches_count) {
         std::cerr << "\r" << ProgressBar(batch_id, batches_count) << std::flush;
         return [this, batch_id, batches_count]() {
             std::cerr << "\r" << ProgressBar(batch_id + 1, batches_count) << std::flush;
