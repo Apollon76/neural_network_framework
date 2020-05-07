@@ -45,7 +45,9 @@ public:
 
     void SetTrain(bool) override {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 
     template<class Archive>
     void serialize(Archive &) {}
@@ -99,7 +101,9 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 };
 CEREAL_REGISTER_TYPE(SoftmaxActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, SoftmaxActivationLayer<double>)
@@ -155,7 +159,9 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 };
 CEREAL_REGISTER_TYPE(ReLUActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, ReLUActivationLayer<double>)
@@ -199,7 +205,9 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 };
 CEREAL_REGISTER_TYPE(TanhActivationLayer<double>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ILayer<double>, TanhActivationLayer<double>)

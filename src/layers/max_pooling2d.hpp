@@ -78,7 +78,9 @@ public:
         ar(kernel_width);
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 
 private:
     void UpdateDimensions(int &height, int &width) const {

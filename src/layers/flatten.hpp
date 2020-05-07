@@ -86,7 +86,9 @@ public:
         ar(input_dim);
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 
 private:
     TensorDimensions input_dim;

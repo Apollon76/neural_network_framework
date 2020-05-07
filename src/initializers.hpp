@@ -14,9 +14,9 @@ namespace {
         }
 
         template <class T>
-        double operator()(T& generator) {
+        double operator()(T& gen) {
             while (true) {
-                double result = distribution(generator);
+                double result = distribution(gen);
                 if (fabs(result) < 2 * stddev) {
                     return result;
                 }
@@ -32,6 +32,7 @@ namespace {
 class IInitializer {
 public:
     [[nodiscard]] virtual Tensor<double> generate(TensorDimensions dimensions) const = 0;
+    virtual ~IInitializer() = default;
 };
 
 class ConstInitializer : public  IInitializer {
@@ -45,6 +46,8 @@ public:
         int val = value;
         return Tensor<double>::filledRandom(dimensions, [val](){return val; });
     }
+
+    ~ConstInitializer() override = default;
 private:
     double value;
 };
@@ -60,6 +63,8 @@ public:
         std::uniform_real_distribution<double> distribution(minval, maxval);
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
     }
+
+    ~UniformInitializer() override = default;
 private:
     double minval, maxval;
 };
@@ -75,6 +80,8 @@ public:
         truncated_normal_distribution distribution(mean, stddev);
         return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
     }
+
+    ~NormalInitializer() override = default;
 private:
     double mean, stddev;
 };

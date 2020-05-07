@@ -67,7 +67,9 @@ public:
         ar(p);
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
+    };
 
 private:
     double p;
