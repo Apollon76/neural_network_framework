@@ -38,7 +38,7 @@ docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework test
 ```
 
-## Разработка
+## Для разработки
 
 #### JetBrains Clion 
 Для разработки в Clion удобнее всего использовать remote toolchain в докере:
