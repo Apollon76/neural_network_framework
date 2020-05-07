@@ -30,8 +30,8 @@ case "$1" in
 "example-digit-recognizer")
     exec "/nn_framework/examples/digit_recognizer/run.sh"
     ;;
-"example-image-loading")
-    exec "/nn_framework/examples/image_loading/run.sh"
+"example-images-loading")
+    exec "/nn_framework/examples/images_loading/run.sh"
     ;;
 *)
     exec "$@"

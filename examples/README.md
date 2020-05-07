@@ -38,5 +38,5 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-digit-recognizer
 
 Для запуска нужно выполнить команду в **корне проекта**:
 ```
-docker-compose run -v $(pwd):/nn_framework nn_framework example-image-loading
+docker-compose run -v $(pwd):/nn_framework nn_framework example-images-loading
 ```
