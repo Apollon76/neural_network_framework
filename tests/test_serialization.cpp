@@ -146,7 +146,7 @@ TEST(SerializationTest, TestSaveConv2d) {
         std::ofstream os(filename);
         cereal::JSONOutputArchive oarchive(os);
 
-        auto layer = Convolution2dLayer<double>(1, 2, 3, 4, ConvolutionPadding::Valid);
+        auto layer = Convolution2dLayer<double>(1, 2, 3, 4, ConvolutionPadding::Same);
         oarchive(layer);
     }
 

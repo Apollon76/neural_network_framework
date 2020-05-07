@@ -6,7 +6,6 @@
 
 enum ConvolutionPadding {
     Same,
-    Valid,
 };
 
 arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kernel, ConvolutionPadding padding);
@@ -18,22 +17,15 @@ arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kerne
 template<typename T>
 arma::Mat<T> Conv2d(const arma::Mat<T> &matrix, const arma::Mat<T> &kernel, ConvolutionPadding padding) {
     auto result = arma::Mat<T>(Conv2dSize(arma::size(matrix), arma::size(kernel), padding), arma::fill::zeros);
-    for (arma::uword i = 0; i < result.n_rows; i++) {
-        for (arma::uword s = 0; s < result.n_cols; s++) {
-            auto subX = matrix.submat(
-                    i,
-                    s,
-                    std::min(i + kernel.n_rows - 1, matrix.n_rows - 1),
-                    std::min(s + kernel.n_cols - 1, matrix.n_cols - 1)
-            );
-            auto subY = kernel.submat(
-                    0,
-                    0,
-                    std::min(kernel.n_rows - 1, matrix.n_rows - i - 1),
-                    std::min(kernel.n_cols - 1, matrix.n_cols - s - 1)
-            );
-            result(i, s) = arma::accu(subX % subY);
+    for (arma::uword k_x = 0; k_x < kernel.n_rows; k_x++) {
+        auto row_multiplier = arma::Mat<T>(matrix.n_cols, matrix.n_cols, arma::fill::zeros);
+        for (arma::uword y = 0; y < matrix.n_cols; y++) {
+            for (arma::uword k_y = 0; y + k_y < matrix.n_cols && k_y < kernel.n_cols; k_y++) {
+                row_multiplier(y + k_y, y) = kernel(k_x, k_y);
+            }
         }
+        arma::Mat<T> row_result = matrix * row_multiplier;
+        result.rows(0, matrix.n_rows - k_x - 1) += row_result.rows(k_x, matrix.n_rows - 1);
     }
     return result;
 }

@@ -581,28 +581,27 @@ TEST(FlattenLayerTest, TestPullGradientsBackward) {
     ));
 }
 
-
-TEST(ArmaConvolutionTest, TestValid) {
-    auto image = arma::mat(3, 3, arma::fill::randu);
-    auto kernel = arma::mat(1, 2, arma::fill::randu);
-    auto result = Conv2d(image, kernel, ConvolutionPadding::Valid);
-    MATRIX_SHOULD_BE_EQUAL_TO(result, arma::mat
-            ({
-                     {
-                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1),
-                             image(0, 1) * kernel(0, 0) + image(0, 2) * kernel(0, 1),
-                     },
-                     {
-                             image(1, 0) * kernel(0, 0) + image(1, 1) * kernel(0, 1),
-                             image(1, 1) * kernel(0, 0) + image(1, 2) * kernel(0, 1),
-                     },
-                     {
-                             image(2, 0) * kernel(0, 0) + image(2, 1) * kernel(0, 1),
-                             image(2, 1) * kernel(0, 0) + image(2, 2) * kernel(0, 1),
-                     },
-             })
-    );
-}
+//TEST(ArmaConvolutionTest, TestValid) {
+//    auto image = arma::mat(3, 3, arma::fill::randu);
+//    auto kernel = arma::mat(1, 2, arma::fill::randu);
+//    auto result = Conv2d(image, kernel, ConvolutionPadding::Valid);
+//    MATRIX_SHOULD_BE_EQUAL_TO(result, arma::mat
+//            ({
+//                     {
+//                             image(0, 0) * kernel(0, 0) + image(0, 1) * kernel(0, 1),
+//                             image(0, 1) * kernel(0, 0) + image(0, 2) * kernel(0, 1),
+//                     },
+//                     {
+//                             image(1, 0) * kernel(0, 0) + image(1, 1) * kernel(0, 1),
+//                             image(1, 1) * kernel(0, 0) + image(1, 2) * kernel(0, 1),
+//                     },
+//                     {
+//                             image(2, 0) * kernel(0, 0) + image(2, 1) * kernel(0, 1),
+//                             image(2, 1) * kernel(0, 0) + image(2, 2) * kernel(0, 1),
+//                     },
+//             })
+//    );
+//}
 
 TEST(ArmaConvolutionTest, TestSame) {
     auto image = arma::mat(3, 3, arma::fill::randu);
