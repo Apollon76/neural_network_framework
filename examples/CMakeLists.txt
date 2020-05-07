@@ -11,3 +11,6 @@ target_link_libraries(images_loading neural_network_framework)
 
 add_executable(interactivity interactivity/interactivity.cpp)
 target_link_libraries(interactivity neural_network_framework)
+
+add_executable(simple simple/simple.cpp)
+target_link_libraries(simple neural_network_framework)
