@@ -15,6 +15,7 @@
 #include <src/layers/dropout.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
+#include <src/layers/max_pooling2d.hpp>
 #include <src/callbacks/performance_metrics_callback.hpp>
 #include <src/callbacks/logging_callback.hpp>
 #include <src/os_utils.hpp>
@@ -71,14 +72,18 @@ NeuralNetwork<double> BuildMnistNN(std::unique_ptr<IOptimizer<double>> optimizer
 NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optimizer) {
     auto conv_filters = 2;
     auto img_size = 28;
+    auto pooled_size = img_size / 2;
     auto neural_network = NeuralNetwork<double>(std::move(optimizer),
                                                 std::make_unique<CategoricalCrossEntropyLoss<double>>());
     neural_network
             .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, conv_filters, 3, 3, ConvolutionPadding::Same))
+            .AddLayer(std::make_unique<MaxPooling2dLayer<double>>(2, 2))
             .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
-            .AddLayer(std::make_unique<DropoutLayer<double>>(0.1))
-            .AddLayer(std::make_unique<FlattenLayer<double>>(std::vector<int>{0, conv_filters, img_size, img_size}))
-            .AddLayer(std::make_unique<DenseLayer<double>>(img_size * img_size * conv_filters, 100))
+//            .AddLayer(std::make_unique<DropoutLayer<double>>(0.1))
+            .AddLayer(std::make_unique<FlattenLayer<double>>(
+                    std::vector<int>{0, conv_filters, pooled_size, pooled_size}
+            ))
+            .AddLayer(std::make_unique<DenseLayer<double>>(pooled_size * pooled_size * conv_filters, 100))
             .AddLayer(std::make_unique<SigmoidActivationLayer<double>>())
             .AddLayer(std::make_unique<DenseLayer<double>>(100, 10))
             .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
@@ -153,14 +158,15 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
 
     auto neural_network = BuildMnistNNConv(std::move(optimizer));
     auto callback = EveryNthEpoch<double>(
-            10,
-            ScoreCallback<double>("train score", [](const Tensor<double> &a,
-                                                    const Tensor<double> &b) {
+            1,
+            ScoreCallback<double>("train score", [](
+                    const Tensor<double> &a,
+                    const Tensor<double> &b) {
                 return nn_framework::scoring::one_hot_accuracy_score(a, b);
             }, x_train, y_train));
 //    neural_network.AddCallback<PerformanceMetricsCallback>();
 //    neural_network.AddCallback<LoggingCallback>();
-    neural_network.Fit(x_train, y_train, 40, 128, true, callback);
+    neural_network.Fit(x_train, y_train, 10, 128, true, callback);
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;

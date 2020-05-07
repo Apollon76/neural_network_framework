@@ -11,6 +11,7 @@
 #include <iostream>
 #include <src/data_processing/data_utils.hpp>
 #include <src/layers/dropout.hpp>
+#include <src/layers/max_pooling2d.hpp>
 
 double sigmoidGradient(double x) {
     return exp(-x) / pow((exp(-x) + 1), 2);
@@ -199,7 +200,7 @@ TEST(NeuralNetworkTest, TestLinearDependency) {
         network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer<double>*>(network.GetLayer(0))->GetWeightsAndBias(),
+            dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
                             {2},
@@ -234,7 +235,7 @@ TEST(NeuralNetworkTest, TestLinearDependencyWithSigmoid) {
         network.FitOneIteration(inputs, outputs);
     }
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<DenseLayer<double>*>(network.GetLayer(0))->GetWeightsAndBias(),
+            dynamic_cast<DenseLayer<double> *>(network.GetLayer(0))->GetWeightsAndBias(),
             Tensor<double>::init(
                     {
                             {2},
@@ -257,7 +258,7 @@ TEST(NeuralNetworkTest, TestConvolutionDependency) {
     }
     EXPECT_LE(loss, 1e-8);
     TENSOR_SHOULD_BE_EQUAL_TO(
-            dynamic_cast<Convolution2dLayer<double>*>(network.GetLayer(0))->GetWeights(),
+            dynamic_cast<Convolution2dLayer<double> *>(network.GetLayer(0))->GetWeights(),
             expected_layer.GetWeights(),
             1e-1
     );
@@ -809,7 +810,7 @@ TEST(DropoutLayerTest, TestPullGradientsBackward) {
                     },
                     {
                             {2, 0, 0},
-                            {0, 0,  12}
+                            {0, 0, 12}
                     }
             }
     );
@@ -843,4 +844,88 @@ TEST(DropoutLayerTest, TestPullGradientsBackward) {
     auto grad_actual = layer.PullGradientsBackward(input, grad);
     TENSOR_SHOULD_BE_EQUAL_TO(grad_actual.input_gradients, expected_grad);
     TENSOR_SHOULD_BE_EQUAL_TO(grad_actual.layer_gradients, Tensor<double>());
+}
+
+TEST(MaxPooling2dLayerTest, TestPullGradientsBackward) {
+    auto layer = MaxPooling2dLayer<double>(2, 2);
+    auto input = Tensor<double>::init(
+            {
+                    {
+                            {1,  2,  3,  4},
+                            {5,  6,  7,  8},
+                            {9,  10,  11,  12},
+                            {13,  14,  15,  16},
+
+                    },
+                    {
+                            {-1, -2, -3, -4},
+                            {-5, -6, -7, -8},
+                            {-9, -10, -11, -12},
+                            {-13, -14, -15, -16},
+                    }
+            }
+    );
+    auto output = layer.Apply(input);
+    auto gradients = layer.PullGradientsBackward(input, Tensor<double>::init(
+            {
+                    {
+                            {1, 2},
+                            {3, 4}
+                    },
+                    {
+                            {5, 6},
+                            {7, 8}
+                    }
+            }));
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.layer_gradients, Tensor<double>());
+    TENSOR_SHOULD_BE_EQUAL_TO(gradients.input_gradients, Tensor<double>::init(
+            {
+                    {
+                            {0, 0, 0, 0},
+                            {0, 1, 0, 2},
+                            {0, 0, 0, 0},
+                            {0, 3, 0, 4},
+
+                    },
+                    {
+                            {5, 0, 6, 0},
+                            {0, 0, 0, 0},
+                            {7, 0, 8, 0},
+                            {0, 0, 0, 0},
+                    }
+            }
+    ));
+}
+
+TEST(MaxPooling2dLayerTest, TestApply) {
+    auto layer = MaxPooling2dLayer<double>(2, 2);
+    auto input = Tensor<double>::init(
+            {
+                    {
+                            {1,  2,  3,  4},
+                            {5,  6,  7,  8},
+                            {9,  10,  11,  12},
+                            {13,  14,  15,  16},
+
+                    },
+                    {
+                            {-1, -2, -3, -4},
+                            {-5, -6, -7, -8},
+                            {-9, -10, -11, -12},
+                            {-13, -14, -15, -16},
+                    }
+            }
+    );
+    auto output = layer.Apply(input);
+    TENSOR_SHOULD_BE_EQUAL_TO(output, Tensor<double>::init(
+            {
+                    {
+                            {6,  8},
+                            {14, 16}
+                    },
+                    {
+                            {-1, -3},
+                            {-9, -11}
+                    }
+            }));
 }
