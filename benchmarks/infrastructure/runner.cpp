@@ -110,8 +110,10 @@ int main(int argc, char **argv) {
                         metric.train_loss = train_loss;
                         metric.test_loss = model->GetLoss()->GetLoss(test_prediction, y_test);
                         metrics[epoch] = metric;
-                        std::cerr << "Epoch: " << epoch + 1 << "/" << epochs << " train score: "
-                                  << metric.train_score << " test score: " << metric.test_score << std::endl;
+                        std::cerr << "Epoch: " << epoch + 1 << "/" << epochs
+                                  << " train score: " << metric.train_score << " train loss: " << metric.train_loss
+                                  << " test score: " << metric.test_score << " test loss: " << metric.test_loss
+                                  << std::endl;
                         return CallbackSignal::Continue;
                     };
                 });

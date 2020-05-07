@@ -14,17 +14,18 @@ def load_data(data_path: str) -> (np.array, np.array, np.array, np.array):
     train_labels_one_hot = tf.reshape(tf.one_hot(train_labels, 10), [-1, 10])
     test_labels_one_hot = tf.reshape(tf.one_hot(test_labels, 10), [-1, 10])
 
-    for x in train_images, train_labels_one_hot, test_images, test_labels_one_hot:
-        print(x.shape)
-
     return train_images, train_labels_one_hot, test_images, test_labels_one_hot
 
 
 def build_model() -> Model:
     model = Sequential([
         L.Conv2D(10, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+        L.MaxPooling2D((2, 2)),
+        L.Conv2D(5, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+        L.MaxPooling2D((2, 2)),
         L.Flatten(),
-        L.Dense(10, activation='softmax')
+        L.Dense(100, activation='sigmoid'),
+        L.Dense(10, activation='softmax'),
     ])
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['categorical_accuracy'])
     return model

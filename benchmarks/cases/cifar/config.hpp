@@ -2,7 +2,6 @@
 
 #include <benchmarks/infrastructure/config_interface.hpp>
 
-#include <src/io/csv.hpp>
 #include <src/scoring/scoring.hpp>
 #include <src/neural_network.hpp>
 #include <src/optimizer.hpp>
@@ -10,6 +9,7 @@
 #include <src/layers/dense.hpp>
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
+#include <src/layers/max_pooling2d.hpp>
 
 namespace benchmarks {
     class CifarConfig : public Config {
@@ -29,10 +29,20 @@ namespace benchmarks {
             auto model = NeuralNetwork<float>(std::make_unique<RMSPropOptimizer<float>>(),
                                                std::make_unique<CategoricalCrossEntropyLoss<float>>());
 
-            model.AddLayer<Convolution2dLayer>(3, 10, 3, 3, ConvolutionPadding::Same)
+            model
+                    .AddLayer<Convolution2dLayer>(3, 10, 3, 3, ConvolutionPadding::Same)
                     .AddLayer<ReLUActivationLayer>()
-                    .AddLayer<FlattenLayer>(std::vector<int>{0, 10, 32, 32})
-                    .AddLayer<DenseLayer>(10240, 10)
+                    .AddLayer<MaxPooling2dLayer>(2, 2)
+
+                    .AddLayer<Convolution2dLayer>(3, 5, 3, 3, ConvolutionPadding::Same)
+                    .AddLayer<ReLUActivationLayer>()
+                    .AddLayer<MaxPooling2dLayer>(2, 2)
+
+                    .AddLayer<FlattenLayer>(std::vector<int>{0, 5, 8, 8})
+                    .AddLayer<DenseLayer>(320, 100)
+                    .AddLayer<SigmoidActivationLayer>()
+
+                    .AddLayer<DenseLayer>(100, 10)
                     .AddLayer<SoftmaxActivationLayer>();
 
             return model;

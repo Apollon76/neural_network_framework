@@ -158,18 +158,19 @@ def main():
         print('Script should be called in ./benchmarks directory')
         exit(1)
 
-    test_name = 'mnist'
-    #test_name = 'cifar'
-    data_path = f'cases/{test_name}/data'
-    epochs = 10
-    batch_size = 32
+    tests = {
+        ['mnist', 32, 10],
+        ['cifar', 128, 5]
+    }
+    for test_name, batch_size, epochs in tests:
+        data_path = f'cases/{test_name}/data'
 
-    prepare(test_name)
+        prepare(test_name)
 
-    keras_result = run_keras(test_name, data_path, epochs, batch_size)
-    nn_framework_result = run_nn_framework(test_name, data_path, epochs, batch_size)
+        keras_result = run_keras(test_name, data_path, epochs, batch_size)
+        nn_framework_result = run_nn_framework(test_name, data_path, epochs, batch_size)
 
-    plot_results(test_name, keras_result, nn_framework_result)
+        plot_results(test_name, keras_result, nn_framework_result)
 
     print('Everything done')
 
