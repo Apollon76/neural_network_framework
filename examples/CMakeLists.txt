@@ -8,3 +8,6 @@ target_link_libraries(digit_recognizer neural_network_framework)
 
 add_executable(images_loading images_loading/images_loading.cpp)
 target_link_libraries(images_loading neural_network_framework)
+
+add_executable(interactivity interactivity/interactivity.cpp)
+target_link_libraries(interactivity neural_network_framework)
