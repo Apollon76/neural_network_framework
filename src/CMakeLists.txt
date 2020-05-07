@@ -41,6 +41,7 @@ file(GLOB PROTOBUF_MODELS_INCLUDES "src/*.pb.cc" "src/*.hpp")
 
 add_library(neural_network_framework SHARED
         tensor.hpp
+        initializers.hpp
         layers/activations.hpp
         layers/dense.hpp
         layers/dropout.hpp

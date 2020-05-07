@@ -1,6 +1,7 @@
 #pragma once
 
 #include <src/tensor.hpp>
+#include <src/initializers.hpp>
 #include <src/arma_math.hpp>
 #include <cereal/types/polymorphic.hpp>
 
@@ -112,6 +113,10 @@ public:
         archive(d, p);
         weights = Tensor<T>::filled(d, arma::fill::randu);
         padding = p;
+    }
+
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        std::ignore = initializer;
     }
 
 private:

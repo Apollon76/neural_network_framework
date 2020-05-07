@@ -1,6 +1,7 @@
 #pragma once
 
 #include <src/tensor.hpp>
+#include <src/initializers.hpp>
 #include <src/utils.hpp>
 #include <layers.pb.h>
 #include <iostream>
@@ -103,6 +104,11 @@ public:
         archive(rows, cols);
         weights_and_bias = DenseLayer(rows, cols).weights_and_bias;
     }
+
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+        Tensor<T> result = initializer->generate(weights_and_bias.D).template ConvertTo<T>();
+        weights_and_bias = result;
+    };
 
 private:
     Tensor<T> weights_and_bias;

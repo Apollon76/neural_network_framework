@@ -12,6 +12,7 @@
 #include "optimizer.hpp"
 #include "tensor.hpp"
 #include "neural_network_interface.hpp"
+#include "initializers.hpp"
 
 using nn_framework::data_processing::GenerateBatches;
 using nn_framework::data_processing::Data;
@@ -29,9 +30,23 @@ public:
     ) : layers(),
         optimizer(std::move(_optimizer)),
         loss(std::move(_loss)) {
+        initializer = nullptr; // leave backward compatibility
+    }
+
+    explicit NeuralNetwork(
+            std::unique_ptr<IOptimizer<T>> _optimizer,
+            std::unique_ptr<ILoss<T>> _loss,
+            std::unique_ptr<IInitializer> _initializer
+    ) : layers(),
+        optimizer(std::move(_optimizer)),
+        loss(std::move(_loss)),
+        initializer(std::move(_initializer)) {
     }
 
     NeuralNetwork &AddLayer(std::unique_ptr<ILayer<T>> layer) {
+        if (initializer != nullptr) {
+            layer->Initialize(initializer);
+        }
         layers.emplace_back(std::move(layer));
         return *this;
     }
@@ -164,4 +179,5 @@ private:
     std::vector<std::unique_ptr<ILayer<T>>> layers;
     std::unique_ptr<IOptimizer<T>> optimizer;
     std::unique_ptr<ILoss<T>> loss;
+    std::unique_ptr<IInitializer> initializer;
 };
