@@ -23,7 +23,7 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-hdf5
 
 Вот результат, который у нас получился:
 
-![Submit screenshot](/examples/digit_recognizer/submit.png)
+![Submit screenshot](/examples/digit_recognizer/kaggle.png)
 
 Для запуска нужно выполнить команду в **корне проекта**:
 ```
