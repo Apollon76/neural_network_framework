@@ -10,8 +10,9 @@
 В этом примере сначла обучается простая модель на mnist-е с помощью keras, сохраняется, затем загружается нашим фреймворком. В конце проверяется score модели после загрузки.
 Затем всё то же самое повторяется в другую сторону: модель обучается в нашем фреймворке, сохраняется, загружается в keras, считается score.
 
-Для запуска нужно выполнить команду в **корне проекта**:
+Для запуска нужно выполнить команды в **корне проекта**:
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework example-hdf5
 ```
 
@@ -25,8 +26,9 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-hdf5
 
 ![Submit screenshot](/examples/digit_recognizer/kaggle.png)
 
-Для запуска нужно выполнить команду в **корне проекта**:
+Для запуска нужно выполнить команды в **корне проекта**:
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework example-digit-recognizer
 ```
 
@@ -36,8 +38,9 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-digit-recognizer
 
 Мы загружаем данные из png и обучаем на них простую сеть (данные - опять mnist).
 
-Для запуска нужно выполнить команду в **корне проекта**:
+Для запуска нужно выполнить команды в **корне проекта**:
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework example-images-loading
 ```
 
@@ -58,7 +61,8 @@ Epoch 17
 
 В коде примера используются колбэки `ProgressBarCallback` и `PerformanceMetricsCallback`.
 
-Для запуска нужно выполнить команду в **корне проекта**:
+Для запуска нужно выполнить команды в **корне проекта**:
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework example-interactivity
 ```
