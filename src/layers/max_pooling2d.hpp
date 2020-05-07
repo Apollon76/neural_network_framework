@@ -67,7 +67,7 @@ public:
         };
     }
 
-    void ApplyGradients(const Tensor<T> &gradients) override {}
+    void ApplyGradients(const Tensor<T> &) override {}
 
     template<class Archive>
     void serialize(Archive &ar) {
