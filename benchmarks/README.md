@@ -16,6 +16,17 @@
 
 ![Results screenshot](/benchmarks/benchmark-results/mnist/fitting-time.png)
 
+Архитектура модели была такая (в плюсах такая же):
+
+```
+model = Sequential([
+    L.Input(784),
+    L.Dense(100, activation='sigmoid'),
+    L.Dense(10, activation='softmax')
+])
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categorical_accuracy'])
+```
+
 
 ### cifar
 
@@ -29,6 +40,20 @@
 
 Здесь keras далеко впереди. Скорее всего - из-за самописной реализации конволюции. Такая была выбрана, т.к. в armadillo реализация, судя по документациии, тоже сырая, но ещё и не совсем подходит для нашей архитектуры - легко было бы запутаться.
 
+Архитектура модели была такая (в плюсах такая же):
+
+```
+model = Sequential([
+    L.Conv2D(10, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+    L.MaxPooling2D((2, 2)),
+    L.Conv2D(5, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+    L.MaxPooling2D((2, 2)),
+    L.Flatten(),
+    L.Dense(100, activation='sigmoid'),
+    L.Dense(10, activation='softmax'),
+])
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['categorical_accuracy'])
+```
 
 ### Про механику бенчмарков
 
