@@ -68,11 +68,9 @@ int main(int argc, char **argv) {
 
     cxxopts::Options options("digit recognizer example");
     options.add_options()("data-path", "path to data", cxxopts::value<std::string>());
-    options.add_options()("output-path", "path to save output", cxxopts::value<std::string>());
     auto parsed_args = options.parse(argc, argv);
     auto data_path = parsed_args["data-path"].as<std::string>();
-    auto output_path = parsed_args["output-path"].as<std::string>();
 
-    DigitRecognizer(data_path + "/kaggle-digit-recognizer", output_path);
+    DigitRecognizer(data_path + "/kaggle-digit-recognizer");
     return 0;
 }
