@@ -44,7 +44,7 @@ NeuralNetwork<double> BuildMnistNN() {
 }
 
 void MnistPng(const std::string &data_path) {
-    auto[x_train, y_train] = LoadMnistPng(data_path + "train");
+    auto[x_train, y_train] = LoadMnistPng(data_path + "/train");
     auto[x_test, y_test] = LoadMnistPng(data_path + "/test");
 
     std::cout << "X: " << FormatDimensions(x_train) << " y: " << FormatDimensions(y_train) << std::endl;
