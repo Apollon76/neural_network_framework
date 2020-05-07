@@ -69,6 +69,8 @@ public:
 
     void ApplyGradients(const Tensor<T> &) override {}
 
+    void SetTrain(bool) override {}
+
     template<class Archive>
     void serialize(Archive &ar) {
         ar(kernel_height);

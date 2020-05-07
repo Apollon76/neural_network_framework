@@ -96,7 +96,7 @@ NeuralNetwork<double> BuildMnistNNConv(std::unique_ptr<IOptimizer<double>> optim
             .AddLayer(std::make_unique<Convolution2dLayer<double>>(1, conv_filters, 3, 3, ConvolutionPadding::Same))
             .AddLayer(std::make_unique<MaxPooling2dLayer<double>>(2, 2))
             .AddLayer(std::make_unique<ReLUActivationLayer<double>>())
-//            .AddLayer(std::make_unique<DropoutLayer<double>>(0.1))
+            .AddLayer(std::make_unique<DropoutLayer<double>>(0.1))
             .AddLayer(std::make_unique<FlattenLayer<double>>(
                     std::vector<int>{0, conv_filters, pooled_size, pooled_size}
             ))
@@ -183,8 +183,10 @@ void DigitRecognizerConv(const std::string &data_path, const std::string &output
             }, x_train, y_train));
 //    neural_network.AddCallback<PerformanceMetricsCallback>();
 //    neural_network.AddCallback<LoggingCallback>();
+    neural_network.SetTrain(true);
     neural_network.Fit(x_train, y_train, 10, 128, true, callback);
 
+    neural_network.SetTrain(false);
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(neural_network.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
 

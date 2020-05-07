@@ -98,6 +98,8 @@ public:
         }
     }
 
+    void SetTrain(bool) override {}
+
     template<class Archive>
     void save(Archive &ar) const {
         ar(weights.D, padding);

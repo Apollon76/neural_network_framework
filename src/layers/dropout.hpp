@@ -23,6 +23,8 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        if (!is_train)
+            return input;
         mask = Tensor<T>::filled(input.D, arma::fill::randu);
         mask.ForEach([&](int, int, int, arma::Mat<T> &data){
             data.transform([&](T value) { return value > p ? 1 : 0; });
@@ -38,6 +40,11 @@ public:
             const Tensor<T>&,
             const Tensor<T> &output_gradients
     ) const override {
+        if (!is_train)
+            return Gradients<T>{
+                    output_gradients,
+                    Tensor<T>()
+            };
         auto result = Tensor<T>(output_gradients.D, output_gradients.Field());
         result.ForEach([&](int a, int b, int c, arma::Mat<T> &data){
             data %= mask.Field().at(a, b, c);
@@ -50,6 +57,10 @@ public:
 
     void ApplyGradients(const Tensor<T>&) override {}
 
+    void SetTrain(bool value) override {
+        is_train = value;
+    }
+
     template<class Archive>
     void serialize(Archive &ar) {
         ar(p);
@@ -58,6 +69,7 @@ public:
 private:
     double p;
     mutable Tensor<T> mask;
+    bool is_train = true;
 };
 
 CEREAL_REGISTER_TYPE(DropoutLayer<double>)

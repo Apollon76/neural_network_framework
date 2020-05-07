@@ -8,4 +8,5 @@ class INeuralNetwork {
 public:
     virtual Tensor<T> Predict(const Tensor<T> &input) const = 0;
     virtual ILoss<T>* GetLoss() const = 0;
+    virtual void SetTrain(bool value) = 0;
 };
