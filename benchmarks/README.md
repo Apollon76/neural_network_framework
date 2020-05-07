@@ -61,7 +61,7 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['ca
 
 Для работы бенчмарков потребуется docker.
 
-Внутри будут запущена сначала модель в keras-е, а затем - в нашем фреймворке.
+Внутри будет запущена сначала модель в keras-е, а затем - в нашем фреймворке.
 После этого будут построены графики и сохранены в ```benchmarks/benchmark-results``` (они уже лежат там и на этой странице).
 
 Сами тесты описаны в директории ```benchmarks/benchmark-results/cases/<testname>/config.<hpp|py>```:
