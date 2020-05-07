@@ -44,7 +44,7 @@ NeuralNetwork<double> BuildMnistNN() {
     return neural_network;
 }
 
-void DigitRecognizer(const std::string &data_path, const std::string &output) {
+void DigitRecognizer(const std::string &data_path) {
     auto[x_train, y_train] = LoadMnist(data_path + "/train.csv");
     auto x_test = LoadMnistX(data_path + "/test.csv");
 

@@ -6,7 +6,7 @@
 #include <src/neural_network.hpp>
 #include <src/layers/activations.hpp>
 
-int main(int argc, char **argv) {
+int main(int, char **argv) {
     google::InitGoogleLogging(argv[0]);
     auto neural_network = NeuralNetwork<double>(
             std::make_unique<RMSPropOptimizer<double>>(0.01),
