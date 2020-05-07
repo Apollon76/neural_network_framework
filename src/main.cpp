@@ -240,6 +240,10 @@ std::tuple<Tensor<double>, Tensor<double>> LoadMnistPng(const std::string &path)
     auto paths = nn_framework::io::Filesystem::ListFiles(path);
     nn_framework::io::ImgReader reader(paths);
 
+    auto randomTensor = Tensor<double>::filledRandom({1, 1}, [](){return 0.0;});
+    if (randomTensor.at(0, 0) == 0) {
+        std::cout << "Hello";
+    }
     auto x = Tensor<unsigned char>::filled({(int) paths.size(), 28 * 28}, arma::fill::zeros);
     auto y = Tensor<unsigned char>::filled({(int) paths.size(), 1}, arma::fill::zeros);
     int pos = 0;

@@ -220,6 +220,19 @@ public:
         return tensor;
     }
 
+    static Tensor<T> filledRandom(TensorDimensions d, std::function<T()> generateRandom) {
+        if (d.size() == 2) {
+            std::vector<std::vector<T>> values(d[0], std::vector<T>(d[1]));
+            for (int i = 0; i < d[0]; ++i) {
+                for (int j = 1; j < d[1]; ++j) {
+                    values[i][j] = generateRandom();
+                }
+            }
+            return fromVector(values);
+        }
+        throw std::exception();
+    }
+
     Tensor<T> Rows(const arma::uvec& rows) const {
         auto dim = D;
         dim[0] = rows.size();
