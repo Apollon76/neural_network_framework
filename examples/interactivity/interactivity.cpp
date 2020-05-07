@@ -67,7 +67,7 @@ void DigitRecognizer(const std::string &data_path, const std::string &output) {
     model.Fit(x_train, y_train, 40, 128, false, std::make_shared<CombinedNeuralNetworkCallback<double>>(
             std::vector<std::shared_ptr<ANeuralNetworkCallback<double>>>{
                     std::make_shared<PerformanceMetricsCallback<double>>(),
-                    std::make_shared<ProgressBarCallback<double>>(),
+                    std::make_shared<ProgressBarCallback<double>>(true),
             })
     );
 
