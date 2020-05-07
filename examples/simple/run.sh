@@ -11,4 +11,4 @@ make
 
 cd /nn_framework/examples/simple
 
-$BUILD_DIR/examples/simple --data-path /nn_framework/data --output-path /nn_framework/examples/simple
+GLOG_logtostderr=1 $BUILD_DIR/examples/simple --data-path /nn_framework/data --output-path /nn_framework/examples/simple
