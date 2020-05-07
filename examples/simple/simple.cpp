@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
             std::make_unique<MSELoss<double>>()
     );
     neural_network
-            .AddLayer(std::make_unique<DenseLayer<double>>(10, 1))
+            .AddLayer(std::make_unique<DenseLayer<double>>(3, 1))
             .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
     Tensor<double> input = Tensor<double>::init(
             {
