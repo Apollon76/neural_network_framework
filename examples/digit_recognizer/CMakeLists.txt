@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.9)
+
+add_executable(digit_recognizer digit_recognizer.cpp)
+target_link_libraries(digit_recognizer neural_network_framework)

@@ -10,7 +10,7 @@ WORKDIR=$(mktemp -d)
 cd $WORKDIR || exit
 
 cmake /nn_framework -DCMAKE_BUILD_TYPE=Release
-pushd examples
+pushd examples/hdf5_example
 make
 popd
 
