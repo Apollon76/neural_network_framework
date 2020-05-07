@@ -36,6 +36,9 @@ case "$1" in
 "example-interactivity")
     exec "/nn_framework/examples/interactivity/run.sh"
     ;;
+"example-simple")
+    exec "/nn_framework/examples/simple/run.sh"
+    ;;
 *)
     exec "$@"
     ;;
