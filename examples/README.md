@@ -75,5 +75,6 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-interactivity
 
 Для запуска нужно выполнить команду в **корне проекта**:
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework example-simple
 ```
