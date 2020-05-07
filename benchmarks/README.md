@@ -21,11 +21,11 @@
 
 Здесь результаты уже не такие хорошие. Модель постепенно сходится, так что, возможно, при большем числе эпох она бы и догнала keras.
 
-![Results screenshot](/benchmarks/benchmark-results/mnist/metrics.png)
+![Results screenshot](/benchmarks/benchmark-results/cifar/metrics.png)
 
 Однако производительность даёт совсем мало пространства для увеличения числа эпох...
 
-![Results screenshot](/benchmarks/benchmark-results/mnist/fitting-time.png)
+![Results screenshot](/benchmarks/benchmark-results/cifar/fitting-time.png)
 
 Здесь keras далеко впереди. Скорее всего - из-за самописной реализации конволюции. Такая была выбрана, т.к. в armadillo реализация, судя по документациии, тоже сырая, но ещё и не совсем подходит для нашей архитектуры - легко было бы запутаться.
 
