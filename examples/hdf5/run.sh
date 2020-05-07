@@ -2,6 +2,9 @@
 
 set -e
 
+cd /nn_framework/data/mnist
+./unpack.sh
+
 WORKDIR=$(mktemp -d)
 
 cd $WORKDIR || exit
