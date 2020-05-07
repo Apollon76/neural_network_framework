@@ -5,3 +5,6 @@ target_link_libraries(hdf5_example neural_network_framework)
 
 add_executable(digit_recognizer digit_recognizer/digit_recognizer.cpp)
 target_link_libraries(digit_recognizer neural_network_framework)
+
+add_executable(images_loading images_loading/images_loading.cpp)
+target_link_libraries(images_loading neural_network_framework)

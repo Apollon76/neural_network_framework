@@ -29,3 +29,14 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-hdf5
 ```
 docker-compose run -v $(pwd):/nn_framework nn_framework example-digit-recognizer
 ```
+
+### image loading
+
+Наш фреймворк поддерживает загрузку картинок. Этот пример - простая демонстация этой функции.
+
+Мы загружаем данные из png и обучаем на них простую сеть (данные - опять mnist).
+
+Для запуска нужно выполнить команду в **корне проекта**:
+```
+docker-compose run -v $(pwd):/nn_framework nn_framework example-image-loading
+```
