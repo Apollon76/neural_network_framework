@@ -168,7 +168,7 @@ public:
 private:
     arma::Mat<T> GetOrCreatePrevious(const ILayer<T> *layer, mapping_type &mapping, arma::SizeMat size) {
         auto it = mapping.find(layer);
-        arma::mat previous;
+        arma::Mat<T> previous;
         if (it != mapping.end()) {
             return it->second;
         }

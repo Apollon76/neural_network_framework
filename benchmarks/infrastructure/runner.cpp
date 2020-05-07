@@ -79,10 +79,10 @@ int main(int argc, char **argv) {
         Action action("Loading data from " + data_path);
         data = config->LoadData(data_path);
     }
-    Tensor<double> x_train, y_train, x_test, y_test;
+    Tensor<float> x_train, y_train, x_test, y_test;
     std::tie(x_train, y_train, x_test, y_test) = data;
 
-    NeuralNetwork<double> model;
+    NeuralNetwork<float> model;
     {
         Action action("Building model");
         model = config->BuildModel();
@@ -97,9 +97,9 @@ int main(int argc, char **argv) {
     std::unordered_map<int, Metric> metrics;
     long long totalMsSpent = 0;
     {
-        auto callback = std::make_shared<EpochCallback<double>>(
-                [&x_test, &y_test, &y_train, &config, &metrics](const INeuralNetwork<double> *model, int epoch) {
-                    return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch](const Tensor<double>& train_prediction, double train_loss) {
+        auto callback = std::make_shared<EpochCallback<float>>(
+                [&x_test, &y_test, &y_train, &config, &metrics](const INeuralNetwork<float> *model, int epoch) {
+                    return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch](const Tensor<float>& train_prediction, double train_loss) {
                         auto test_prediction = model->Predict(x_test);
                         Metric metric{};
                         metric.train_score = config->GetScore(y_train, train_prediction);

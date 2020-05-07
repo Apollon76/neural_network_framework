@@ -65,8 +65,8 @@ public:
         ensure(input.Rank() == 2, "SoftMax activation supported only for tensors of rank = 2");
         arma::Mat<T> shifted_input =
                 input.Values() -
-                arma::max(input.Values(), 1) * arma::ones(1, input.D[1]); // todo (mpivko): do we need shift?
-        arma::Mat<T> repeated_sum = arma::sum(arma::exp(shifted_input), 1) * arma::ones(1, input.D[1]);
+                arma::max(input.Values(), 1) * arma::ones<arma::Mat<T>>(1, input.D[1]);
+        arma::Mat<T> repeated_sum = arma::sum(arma::exp(shifted_input), 1) * arma::ones<arma::Mat<T>>(1, input.D[1]);
         return Tensor<T>(input.D, arma::exp(shifted_input) / repeated_sum);
     }
 
@@ -76,8 +76,8 @@ public:
     ) const override {
         auto forward_outputs = Apply(inputs); // todo (mpivko): maybe cache this in field?
 
-        arma::mat sum = arma::sum(output_gradients.Values() % forward_outputs.Values(), 1);
-        arma::mat repeated_sum = sum * arma::ones(1, output_gradients.D[1]);
+        arma::Mat<T> sum = arma::sum(output_gradients.Values() % forward_outputs.Values(), 1);
+        arma::Mat<T> repeated_sum = sum * arma::ones<arma::Mat<T>>(1, output_gradients.D[1]);
 
         return Gradients<T>{
                 Tensor<T>(inputs.D,

@@ -35,7 +35,8 @@ namespace nn_framework::data_processing {
             auto values = matrix.Values();
             return Tensor<T>(
                     matrix.D,
-                    (values - arma::ones(values.n_rows, 1) * mean) / (arma::ones(values.n_rows, 1) * stddev)
+                    (values - arma::ones<arma::Mat<T>>(values.n_rows, 1) * mean) /
+                    (arma::ones<arma::Mat<T>>(values.n_rows, 1) * stddev)
             );
         }
 

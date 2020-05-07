@@ -14,7 +14,9 @@ public:
     DenseLayer() = default;
 
     DenseLayer(int input_size, int output_size)
-            : weights_and_bias({input_size + 1, output_size}, arma::randu(input_size + 1, output_size) - 0.5) {
+            : weights_and_bias(Tensor<double>({input_size + 1, output_size},
+                                              arma::randu(input_size + 1, output_size) -
+                                              0.5).ConvertTo<T>()) {
     }
 
     [[nodiscard]] Tensor<T> GetWeightsAndBias() const {

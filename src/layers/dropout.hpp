@@ -35,7 +35,7 @@ public:
     }
 
     [[nodiscard]] Gradients<T> PullGradientsBackward(
-            const Tensor<T> &inputs,
+            const Tensor<T>&,
             const Tensor<T> &output_gradients
     ) const override {
         auto result = Tensor<T>(output_gradients.D, output_gradients.Field());
@@ -48,7 +48,7 @@ public:
         };
     }
 
-    void ApplyGradients(const Tensor<T> &gradients) override {}
+    void ApplyGradients(const Tensor<T>&) override {}
 
     template<class Archive>
     void serialize(Archive &ar) {

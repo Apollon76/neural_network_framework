@@ -56,9 +56,12 @@ def main():
         fig.savefig(f'{images_path}/metrics.png')
 
     with sns.axes_style("whitegrid"):
-        df = get_total_time_df(data)
+        df = get_total_time_df(data).sort_values(['framework']).reset_index(drop=True)
+        frameworks = sorted(df['framework'])
         fig, ax = plt.subplots(1, 1, figsize=(10, 5))
         sns.barplot('framework', 'value', data=df, ax=ax)
+        for index, row in df.iterrows():
+            ax.text(frameworks.index(row.framework), row.value, f'{row.value} ms', color='black', ha="center")
         ax.set(ylabel='time ms')
         ax.set_title(f'Total fitting time')
         fig.savefig(f'{images_path}/fitting-time.png')
