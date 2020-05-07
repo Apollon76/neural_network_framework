@@ -78,7 +78,7 @@ public:
 
     void ApplyGradients(const Tensor<T> &) override {}
 
-    void SetTrain(bool value) override {}
+    void SetTrain(bool) override {}
 
     template<class Archive>
     void serialize(Archive &ar) {

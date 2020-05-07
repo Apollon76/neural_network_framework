@@ -98,7 +98,7 @@ public:
         }
     }
 
-    void SetTrain(bool value) override {}
+    void SetTrain(bool) override {}
 
     template<class Archive>
     void save(Archive &ar) const {
