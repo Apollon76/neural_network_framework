@@ -30,7 +30,7 @@ public:
     ) : layers(),
         optimizer(std::move(_optimizer)),
         loss(std::move(_loss)) {
-        initializer = std::make_unique<UniformInitializer>();
+        initializer = nullptr; // leave backward compatibility
     }
 
     explicit NeuralNetwork(
@@ -44,7 +44,9 @@ public:
     }
 
     NeuralNetwork &AddLayer(std::unique_ptr<ILayer<T>> layer) {
-        layer->Initialize(initializer);
+        if (initializer != nullptr) {
+            layer->Initialize(initializer);
+        }
         layers.emplace_back(std::move(layer));
         return *this;
     }
