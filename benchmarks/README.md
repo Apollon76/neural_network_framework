@@ -41,9 +41,9 @@
 
 Сами тесты описаны в директории ```benchmarks/benchmark-results/cases/<testname>/config.<hpp|py>```:
 
-[mnist keras](../master/benchmarks/cases/mnist/config.py) \
-[mnist nn-framework](../master/benchmarks/cases/mnist/config.hpp) \
-[cifar keras](../master/benchmarks/cases/cifar/config.py) \
-[cifar nn-framework](../master/benchmarks/cases/cifar/config.hpp)
+[mnist keras](./cases/mnist/config.py) \
+[mnist nn-framework](./cases/mnist/config.hpp) \
+[cifar keras](./cases/cifar/config.py) \
+[cifar nn-framework](./cases/cifar/config.hpp)
 
 
