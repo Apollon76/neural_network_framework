@@ -31,9 +31,10 @@
 Также рекомендуем взглянуть на [результаты бенчмарков](../master/benchmarks/README.md).
 
 #### Тесты
-Для запуска тестов можно выполнить следующую команду:
+Для запуска тестов можно выполнить следующие команды:
 
 ```
+docker-compose build
 docker-compose run -v $(pwd):/nn_framework nn_framework test
 ```
 
