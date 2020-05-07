@@ -40,3 +40,25 @@ docker-compose run -v $(pwd):/nn_framework nn_framework example-digit-recognizer
 ```
 docker-compose run -v $(pwd):/nn_framework nn_framework example-images-loading
 ```
+
+### interactivity
+
+Мы реализовали механику, позволяющую внедриться на определённую стадию процесса обучения нейронной сети и совершить некоторое кастомное действия. 
+Засчёт этого можно добавить интерактивности в поведение фреймворка. В качестве полезных кастомизаций были реализованы `ProgressBarCallback`, `LoggingCallback` и `PerformanceMetricsCallback`. Так, например, добавление прогресс-бара позволяет интерактивно следить за прогрессом обучения нейронной сети:
+```
+$> ./nn-with-progress-bar
+...
+Epoch 15
+329/329 [####################] loss: 0.261841 ♥‿♥
+Epoch 16
+329/329 [####################] loss: 0.256594 (~˘▾˘)~ keep going ~(˘▾˘~)
+Epoch 17
+150/329 [===========>........] loss: 0.250733 
+```
+
+В коде примера используются колбэки `ProgressBarCallback` и `PerformanceMetricsCallback`.
+
+Для запуска нужно выполнить команду в **корне проекта**:
+```
+docker-compose run -v $(pwd):/nn_framework nn_framework example-interactivity
+```

@@ -33,6 +33,9 @@ case "$1" in
 "example-images-loading")
     exec "/nn_framework/examples/images_loading/run.sh"
     ;;
+"example-interactivity")
+    exec "/nn_framework/examples/interactivity/run.sh"
+    ;;
 *)
     exec "$@"
     ;;

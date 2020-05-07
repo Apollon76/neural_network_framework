@@ -90,7 +90,7 @@ public:
         auto start = std::chrono::steady_clock::now();
         return [this, start](const Tensor<T> &, double) {
             metrics.fit_metrics.AddMetric(std::chrono::steady_clock::now() - start);
-            LOG(INFO) << ReportMetrics(metrics);
+            std::cout << ReportMetrics(metrics);
             return CallbackSignal::Continue;
         };
     }
