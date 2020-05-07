@@ -1,4 +1,6 @@
-#include <benchmarks/infrastructure/config_interface.cpp>
+#pragma once
+
+#include <benchmarks/infrastructure/config_interface.hpp>
 
 #include <src/io/csv.hpp>
 #include <src/scoring/scoring.hpp>

@@ -38,6 +38,7 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        ensure(input.D.size() == 4, "Convolution2d input should have 4 dims");
         auto result = Tensor<T>::filled({input.D[0], weights.D[0], input.D[2], input.D[3]}, arma::fill::zeros);
         for (int batch = 0; batch < input.D[0]; batch++) {
             for (int filter = 0; filter < weights.D[0]; filter++) {

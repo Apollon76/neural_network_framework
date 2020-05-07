@@ -80,6 +80,8 @@ def run_nn_framework(test_name, data_path, epochs, batch_size):
 def run_keras(test_name, data_path, epochs, batch_size):
     repo_path = os.path.dirname(os.getcwd())
     results_file = mktempfile()
+    keras_cache_path = '/tmp/keras-cache'
+    os.makedirs(keras_cache_path, exist_ok=True)
 
     image_id = build_docker('tf-docker')
 
@@ -98,6 +100,8 @@ def run_keras(test_name, data_path, epochs, batch_size):
         f'"{repo_path}:/tmp/nn_framework/"',
         '-v',
         f'"{results_file}:/tmp/results.json"',
+        '-v'
+        f'"{keras_cache_path}:/home/user/.keras"',
         f'{image_id}',
         '/bin/bash',
         '-c',
@@ -155,7 +159,8 @@ def main():
         exit(1)
 
     test_name = 'mnist'
-    data_path = 'cases/mnist/data'
+    #test_name = 'cifar'
+    data_path = f'cases/{test_name}/data'
     epochs = 10
     batch_size = 32
 

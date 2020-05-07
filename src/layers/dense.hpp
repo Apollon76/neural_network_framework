@@ -39,6 +39,9 @@ public:
     }
 
     [[nodiscard]] Tensor<T> Apply(const Tensor<T> &input) const override {
+        ensure(input.D[1] == weights_and_bias.D[0] - 1,
+               "Unexpected input size for dense " + std::to_string(input.D[1]) + " != " +
+               std::to_string(weights_and_bias.D[0] - 1));
         return Tensor<T>(
                 {input.D[0], weights_and_bias.D[1]},
                 arma::affmul(weights_and_bias.Values().t(), input.Values().t()).t()

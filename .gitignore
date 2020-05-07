@@ -5,6 +5,7 @@ __pycache__
 cmake-build-*/
 benchmarks/build-cache
 benchmarks/**/*.csv
+benchmarks/cases/cifar/data
 
 data/**/*.csv
 data/**/*.png

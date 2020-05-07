@@ -4,7 +4,8 @@
 
 #include <src/neural_network.hpp>
 #include <src/tensor.hpp>
-#include <benchmarks/cases/mnist/config.cpp>
+#include <benchmarks/cases/mnist/config.hpp>
+#include <benchmarks/cases/cifar/config.hpp>
 
 class Action {
 public:
@@ -70,6 +71,8 @@ int main(int argc, char **argv) {
     std::shared_ptr<Config> config;
     if (test_name == "mnist") {
         config = std::dynamic_pointer_cast<Config>(std::make_shared<benchmarks::MnistConfig>());
+    } else if (test_name == "cifar") {
+        config = std::dynamic_pointer_cast<Config>(std::make_shared<benchmarks::CifarConfig>());
     } else {
         throw std::runtime_error("Unknown test: " + test_name);
     }
@@ -98,8 +101,8 @@ int main(int argc, char **argv) {
     long long totalMsSpent = 0;
     {
         auto callback = std::make_shared<EpochCallback<float>>(
-                [&x_test, &y_test, &y_train, &config, &metrics](const INeuralNetwork<float> *model, int epoch) {
-                    return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch](const Tensor<float>& train_prediction, double train_loss) {
+                [&x_test, &y_test, &y_train, &config, &metrics, epochs](const INeuralNetwork<float> *model, int epoch) {
+                    return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch, epochs](const Tensor<float>& train_prediction, double train_loss) {
                         auto test_prediction = model->Predict(x_test);
                         Metric metric{};
                         metric.train_score = config->GetScore(y_train, train_prediction);
@@ -107,6 +110,8 @@ int main(int argc, char **argv) {
                         metric.train_loss = train_loss;
                         metric.test_loss = model->GetLoss()->GetLoss(test_prediction, y_test);
                         metrics[epoch] = metric;
+                        std::cerr << "Epoch: " << epoch + 1 << "/" << epochs << " train score: "
+                                  << metric.train_score << " test score: " << metric.test_score << std::endl;
                         return CallbackSignal::Continue;
                     };
                 });

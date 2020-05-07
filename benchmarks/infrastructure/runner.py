@@ -56,12 +56,12 @@ def main():
         model = benchmark_configurator.build_model()
 
     with Action(f'Fitting model for {epochs} epochs', endl=True):
+        start = time.time()
         hist = model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test), batch_size=batch_size)
+        total_time_sec = time.time() - start
 
     with Action(f'Evaluating model on test data'):
-        start = time.time()
         results = model.evaluate(X_test, y_test, verbose=0)
-        total_time_sec = time.time() - start
 
     eval_res = '\n'.join([f'{name}: {res}' for name, res in zip(model.metrics_names, results)])
     print(f'Evaluation result:\n{eval_res}')
