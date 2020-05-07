@@ -3,7 +3,8 @@
 #include "tensor.hpp"
 
 namespace {
-    std::mt19937 generator(std::random_device());
+    std::random_device rd;
+    std::mt19937 generator{rd()};
 
     class truncated_normal_distribution {
     public:

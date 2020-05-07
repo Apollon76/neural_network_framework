@@ -30,7 +30,7 @@ public:
     ) : layers(),
         optimizer(std::move(_optimizer)),
         loss(std::move(_loss)) {
-        initializer = UniformInitializer();
+        initializer = std::make_unique<UniformInitializer>();
     }
 
     explicit NeuralNetwork(
