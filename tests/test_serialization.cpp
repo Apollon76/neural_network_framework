@@ -8,6 +8,7 @@
 #include <src/layers/flatten.hpp>
 #include <src/layers/convolution2d.hpp>
 #include <src/layers/dropout.hpp>
+#include <src/layers/max_pooling2d.hpp>
 
 #include "utils.h"
 
@@ -179,5 +180,27 @@ TEST(SerializationTest, TestSaveDropout) {
         iarchive(deserialized);
 
         ASSERT_EQ(deserialized.ToString(), "Dropout: p=0.400000");
+    }
+}
+
+TEST(SerializationTest, TestSaveMaxPooling) {
+    auto filename = "max_pooling_test.json";
+    TensorDimensions shape = {1, 2, 3};
+    {
+        std::ofstream os(filename);
+        cereal::JSONOutputArchive oarchive(os);
+
+        auto layer = MaxPooling2dLayer<double>(2, 3);
+        oarchive(layer);
+    }
+
+    {
+        std::ifstream is(filename);
+        cereal::JSONInputArchive iarchive(is);
+
+        MaxPooling2dLayer<double> deserialized;
+        iarchive(deserialized);
+
+        ASSERT_EQ(deserialized.ToString(), "MaxPooling: 2x3");
     }
 }
