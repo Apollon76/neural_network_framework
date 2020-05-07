@@ -1,6 +1,9 @@
 import tensorflow as tf
 import pandas as pd
 import argparse
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def create_model():
     model = tf.keras.models.Sequential([
