@@ -2,6 +2,9 @@
 
 set -e
 
+cd /nn_framework/data/kaggle-digit-recognizer
+./unpack.sh
+
 BUILD_DIR=$(mktemp -d)
 
 cd $BUILD_DIR || exit
