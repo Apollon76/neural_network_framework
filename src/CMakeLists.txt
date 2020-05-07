@@ -46,6 +46,7 @@ add_library(neural_network_framework SHARED
         layers/dropout.hpp
         layers/convolution2d.hpp
         layers/flatten.hpp
+        layers/max_pooling2d.hpp
         optimizer.hpp
         neural_network.hpp
         neural_network_interface.hpp
