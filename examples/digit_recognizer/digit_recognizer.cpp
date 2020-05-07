@@ -32,7 +32,7 @@ Tensor<double> LoadMnistX(const std::string &path) {
 }
 
 NeuralNetwork<double> BuildMnistNN() {
-    auto neural_network = NeuralNetwork<double>(std::make_unique<RMSPropOptimizer<double>>(),
+    auto neural_network = NeuralNetwork<double>(std::make_unique<RMSPropOptimizer<double>>(0.01),
                                                 std::make_unique<CategoricalCrossEntropyLoss<double>>());
     neural_network
             .AddLayer(std::make_unique<DenseLayer<double>>(784, 100))
