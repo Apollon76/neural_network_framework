@@ -44,18 +44,6 @@ NeuralNetwork<double> BuildMnistNN() {
     return neural_network;
 }
 
-void
-WritePredictions(const NeuralNetwork<double> &model, const Tensor<double> &x_test, const std::string &output_path) {
-    arma::ucolvec predictions = arma::index_max(model.Predict(x_test).Values(), 1);
-    std::string predictions_path = output_path + "/predictions.csv";
-    nn_framework::io::CsvWriter writer(predictions_path);
-    writer.WriteRow({"ImageId", "Label"});
-    for (arma::u64 i = 0; i < predictions.n_rows; i++) {
-        writer.WriteRow({i + 1, predictions.at(i, 0)});
-    }
-    std::cout << "Predictions written to " << predictions_path << std::endl;
-}
-
 void DigitRecognizer(const std::string &data_path, const std::string &output) {
     auto[x_train, y_train] = LoadMnist(data_path + "/train.csv");
     auto x_test = LoadMnistX(data_path + "/test.csv");
@@ -73,8 +61,6 @@ void DigitRecognizer(const std::string &data_path, const std::string &output) {
 
     auto train_score = nn_framework::scoring::one_hot_accuracy_score(model.Predict(x_train), y_train);
     std::cout << "Final train score: " << train_score << std::endl;
-
-    WritePredictions(model, x_test, output);
 }
 
 int main(int argc, char **argv) {
