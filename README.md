@@ -27,8 +27,8 @@
 #### Примеры
 Рекомендуем посмотреть на примеры работы с фреймворком в папке ```examples``` (там же есть более подробный [readme](../master/examples/README.md) о них).
 
-Пример простейшей кода простейшей сети:
-```
+Пример кода простейшей нейронной сети:
+```C++
 auto neural_network = NeuralNetwork<double>(
         std::make_unique<RMSPropOptimizer<double>>(0.01),
         std::make_unique<MSELoss<double>>()
