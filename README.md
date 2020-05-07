@@ -36,9 +36,12 @@ auto neural_network = NeuralNetwork<double>(
 neural_network
         .AddLayer(std::make_unique<DenseLayer<double>>(10, 1))
         .AddLayer(std::make_unique<SoftmaxActivationLayer<double>>());
-Tensor<double> input = Tensor<double>::init(/* your innput tensor here */);
-Tensor<double> output = Tensor<double>::init(/* your output tensor here */);
-neural_network.Fit(input, output, 10); // fit model with 10 epochs
+auto train_input = Tensor<double>::init(/* your innput tensor here */);
+auto train_output = Tensor<double>::init(/* your output tensor here */);
+neural_network.Fit(train_input, train_output, 10); // fit model with 10 epochs
+
+Tensor<double> test_input = Tensor<double>::init(/* your innput tensor here */);
+auto test_output = neural_network.Predict(test_input);
 ```
 
 #### Бенчмарки
