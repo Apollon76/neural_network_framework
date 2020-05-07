@@ -100,6 +100,12 @@ public:
         return output;
     }
 
+    void SetTrain(bool value) override {
+        for (auto& layer : layers) {
+            layer->SetTrain(value);
+        }
+    }
+
     template<class Archive>
     void serialize(Archive &ar) {
         ar(layers, optimizer, loss);

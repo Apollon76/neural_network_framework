@@ -90,6 +90,8 @@ public:
         }
     }
 
+    void SetTrain(bool value) override {}
+
     template<class Archive>
     void save(Archive &ar) const {
         ar(weights_and_bias.D[0] - 1, weights_and_bias.D[1]);

@@ -27,5 +27,7 @@ public:
 
     virtual void ApplyGradients(const Tensor<T> &gradients) = 0;
 
+    virtual void SetTrain(bool value) = 0;
+
     virtual ~ILayer() = default;
 };
