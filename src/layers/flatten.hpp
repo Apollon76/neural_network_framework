@@ -6,6 +6,7 @@
 #include <glog/logging.h>
 #include <cereal/types/polymorphic.hpp>
 #include <src/tensor.hpp>
+#include <src/initializers.hpp>
 
 #include "interface.h"
 
@@ -84,6 +85,8 @@ public:
     void serialize(Archive &ar) {
         ar(input_dim);
     }
+
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
 
 private:
     TensorDimensions input_dim;

@@ -4,6 +4,7 @@
 #include <glog/logging.h>
 
 #include <src/tensor.hpp>
+#include <src/initializers.hpp>
 
 template<typename T>
 struct Gradients {
@@ -28,6 +29,8 @@ public:
     virtual void ApplyGradients(const Tensor<T> &gradients) = 0;
 
     virtual void SetTrain(bool value) = 0;
+
+    virtual void Initialize(const std::unique_ptr<IInitializer>& initializer) = 0;
 
     virtual ~ILayer() = default;
 };

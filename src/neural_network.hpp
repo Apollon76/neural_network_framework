@@ -44,6 +44,7 @@ public:
     }
 
     NeuralNetwork &AddLayer(std::unique_ptr<ILayer<T>> layer) {
+        layer->Initialize(initializer);
         layers.emplace_back(std::move(layer));
         return *this;
     }

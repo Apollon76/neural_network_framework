@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "interface.h"
 #include "src/tensor.hpp"
+#include "src/initializers.hpp"
 
 template<typename T>
 class MaxPooling2dLayer : public ILayer<T> {
@@ -76,6 +77,8 @@ public:
         ar(kernel_height);
         ar(kernel_width);
     }
+
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
 
 private:
     void UpdateDimensions(int &height, int &width) const {

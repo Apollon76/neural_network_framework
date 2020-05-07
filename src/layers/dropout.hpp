@@ -5,6 +5,7 @@
 #include <armadillo>
 #include <cereal/types/polymorphic.hpp>
 #include <src/tensor.hpp>
+#include <src/initializers.hpp>
 
 
 template<typename T>
@@ -65,6 +66,8 @@ public:
     void serialize(Archive &ar) {
         ar(p);
     }
+
+    void Initialize(const std::unique_ptr<IInitializer>& initializer) {};
 
 private:
     double p;
