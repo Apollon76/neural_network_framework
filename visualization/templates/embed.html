@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block content %}
+<nav class="col-md-1 d-none d-md-block bg-light sidebar">
+    <div class="sidebar-sticky">
+        <ul class="nav flex-column col-md-1">
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="metric-button">Metrics</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="profiling-button">Profiling</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="graph-button">Graph</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<main role="main" class="col-md-9">
+    <h1>Current model: {{ model }}</h1>
+    <div content="width=device-width, initial-scale=1, shrink-to-fit=no" id="main">
+        {{ script|safe }}
+    </div>
+    <div content="width=device-width, initial-scale=1, shrink-to-fit=no" id="profiler">
+        <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+        <script type="text/javascript" charset="utf-8">
+            let profiler_socket = io('/profiler_metrics');
+            profiler_socket.send("{{ model }}");
+            profiler_socket.on('message', function (data) {
+                let elem = document.getElementById('profiler-data');
+                elem.textContent = data;
+            })
+        </script>
+        {{ profiler_script|safe }}
+        <pre id="profiler-data"></pre>
+    </div>
+    <div class="svg-container" content="width=device-width, initial-scale=1, shrink-to-fit=yes" id="graph">
+        <a id="graph-holder">It seems like model doesn't exists yet</a>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+        <script type="text/javascript" charset="utf-8">
+            let socket = io();
+            socket.send("{{ model }}");
+            socket.on('message', function (data) {
+                document.getElementById('graph-holder').style.display = 'none';
+                d3.select("#graph")
+                    .graphviz()
+                    .width(1200)
+                    .renderDot(data);
+            })
+        </script>
+    </div>
+</main>
+
+<script type="text/javascript">
+    function hideAll() {
+        let graphBlock = document.getElementById('graph');
+        let mainBlock = document.getElementById('main');
+        let profilerBlock = document.getElementById('profiler');
+
+        let metricsButton = document.getElementById('metric-button');
+        let profilerButton = document.getElementById('profiling-button');
+        let graphButton = document.getElementById('graph-button');
+
+        [graphBlock, mainBlock, profilerBlock].forEach(element => element.style.display = 'none');
+        [metricsButton, profilerButton, graphButton].forEach(element => element.classList.remove('active'));
+    }
+
+    function activate(blockId, buttonId) {
+        hideAll();
+        let block = document.getElementById(blockId);
+        let button = document.getElementById(buttonId);
+
+        block.style.display = 'block';
+        button.classList.add('active');
+    }
+
+    let metrics = document.getElementById('metric-button');
+    let profiling = document.getElementById('profiling-button');
+    let graphButton = document.getElementById('graph-button');
+
+    activate('main', 'metric-button');
+
+    metrics.onclick = function() {
+        activate('main', 'metric-button');
+    };
+
+    profiling.onclick = function() {
+        activate('profiler', 'profiling-button');
+    };
+
+    graphButton.onclick = function() {
+        activate('graph', 'graph-button');
+    };
+</script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+<script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
+{% endblock %}

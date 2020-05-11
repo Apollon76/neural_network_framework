@@ -43,6 +43,9 @@ namespace nn_framework::serialization::hdf5 {
 
             auto training_config = save_training_config(model);
             WriteAttribute(file, "training_config", training_config.dump());
+
+            file.flush();
+
         }
 
     private:
