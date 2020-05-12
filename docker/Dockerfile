@@ -32,7 +32,11 @@ RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libboost-all-dev \
     libprotobuf-dev \
-    protobuf-compiler
+    protobuf-compiler \
+    graphviz \
+    libgraphviz-dev \
+    python3.8-dev \
+    python3.8-distutils
 
 # Armadillo:
 ENV ARMA_VERSION armadillo-9.850.1
@@ -97,7 +101,19 @@ WORKDIR /tmp/HighFive/HighFive-2.2
 RUN cmake -DHIGHFIVE_EXAMPLES=OFF && make install
 
 # Deps for hdf5 example
-RUN python3 -m pip install --upgrade pip==20.0.2 && python3 -m pip install tensorflow==2.1.0 pandas==1.0.3
+RUN python3 -m pip install --upgrade pip==20.1 \
+ && python3 -m pip install \
+        tensorflow==2.1.0 \
+        pandas==1.0.3 \
+        h5py==2.10.0 \
+        bokeh==2.0.2 \
+        pydot==1.4.1 \
+        graphviz==0.14 \
+        pygraphviz==1.5 \
+        pydantic==1.5.1 \
+        flask==1.1.2 \
+        bootstrap-flask==1.3.1 \
+        flask-socketio
 
 # sshd:
 ENV LANG C.UTF-8

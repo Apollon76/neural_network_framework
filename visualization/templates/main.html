@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<ul class="list-group col-4">
+    {% for model in models %}
+    <a class="list-group-item list-group-item-action" href="{{ model.href }}" >{{ model.name.strip() }}</a>
+    {% endfor %}
+</ul>
+{% endblock %}

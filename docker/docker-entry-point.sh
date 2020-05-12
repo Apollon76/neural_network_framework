@@ -39,6 +39,10 @@ case "$1" in
 "example-simple")
     exec "/nn_framework/examples/simple/run.sh"
     ;;
+"visualize")
+    cd /nn_framework
+    exec python3 -m visualization
+    ;;
 *)
     exec "$@"
     ;;

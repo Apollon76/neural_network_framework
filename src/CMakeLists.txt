@@ -66,6 +66,7 @@ add_library(neural_network_framework SHARED
         callbacks/performance_metrics_callback.hpp
         callbacks/logging_callback.hpp
         callbacks/progress_bar_callback.hpp
+        callbacks/plotting_callback.hpp
         ${PROTO_HEADER}
         ${PROTO_SRC})
 

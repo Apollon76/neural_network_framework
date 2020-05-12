@@ -7,6 +7,13 @@
 
 class Metrics {
 public:
+    Metrics()
+        : total_duration(0)
+        , last_duration(0)
+        , metrics_count(0)
+    {
+    }
+
     [[nodiscard]] std::chrono::milliseconds AverageDuration() const {
         if (metrics_count == 0) {
             return std::chrono::milliseconds::zero();
