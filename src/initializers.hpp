@@ -29,13 +29,14 @@ namespace {
     };
 }
 
+template <class T>
 class IInitializer {
 public:
-    [[nodiscard]] virtual Tensor<double> generate(TensorDimensions dimensions) const = 0;
+    [[nodiscard]] virtual Tensor<T> generate(TensorDimensions dimensions) const = 0;
     virtual ~IInitializer() = default;
 };
 
-class ConstInitializer : public  IInitializer {
+class ConstInitializer : public  IInitializer<double> {
 public:
     explicit ConstInitializer(double value)
             : value(value)
@@ -52,7 +53,7 @@ private:
     double value;
 };
 
-class UniformInitializer : public IInitializer {
+class UniformInitializer : public IInitializer<double> {
 public:
     explicit UniformInitializer(double minval = -0.5, double maxval = 0.5)
             : minval(minval), maxval(maxval)
@@ -69,7 +70,7 @@ private:
     double minval, maxval;
 };
 
-class NormalInitializer : public IInitializer {
+class NormalInitializer : public IInitializer<double> {
 public:
     explicit NormalInitializer(double mean = 0, double stddev = 0.05)
             : mean(mean), stddev(stddev)
@@ -86,7 +87,7 @@ private:
     double mean, stddev;
 };
 
-class GlorotNormalInitializer : public IInitializer {
+class GlorotNormalInitializer : public IInitializer<double> {
 public:
     [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
         truncated_normal_distribution distribution(0, sqrt(2.0 / (dimensions.front() + dimensions.back())));
@@ -94,11 +95,28 @@ public:
     }
 };
 
-class GlorotUniformInitializer : public IInitializer {
+template<class T>
+class GlorotUniformInitializer : public IInitializer<T> {
 public:
-    [[nodiscard]] Tensor<double> generate(TensorDimensions dimensions) const override {
-        double limit = sqrt(6.0 / (dimensions.front() + dimensions.back()));
-        std::uniform_real_distribution<double> distribution(-limit, limit);
-        return Tensor<double>::filledRandom(dimensions, [&distribution](){return distribution(generator); });
+    [[nodiscard]] Tensor<T> generate(TensorDimensions dimensions) const override {
+        ensure(!dimensions.empty());
+        double limit;
+        if (dimensions.size() == 1) {
+            limit = sqrt(3.0 / (dimensions[0]));
+        } else if (dimensions.size() == 2) {
+            limit = sqrt(6.0 / (dimensions[0] + dimensions[1]));
+        } else {
+            /*
+             * Our conv2d weights have shape: (filters, input_channels, kernel_height, kernel_width)
+             * So, receptive_field_size = mult(shape[2:])
+             * */
+            double receptive_field_size = 1;
+            for (size_t i = 2; i < dimensions.size(); i++) {
+                receptive_field_size *= dimensions[i];
+            }
+            limit = sqrt(6.0 / ((dimensions[0] + dimensions[1]) * receptive_field_size));
+        }
+        std::uniform_real_distribution<T> distribution(-limit, limit);
+        return Tensor<T>::filledRandom(dimensions, [&distribution]() { return distribution(generator); });
     }
 };

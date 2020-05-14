@@ -36,7 +36,7 @@ public:
     explicit NeuralNetwork(
             std::unique_ptr<IOptimizer<T>> _optimizer,
             std::unique_ptr<ILoss<T>> _loss,
-            std::unique_ptr<IInitializer> _initializer
+            std::unique_ptr<IInitializer<T>> _initializer
     ) : layers(),
         optimizer(std::move(_optimizer)),
         loss(std::move(_loss)),
@@ -179,5 +179,5 @@ private:
     std::vector<std::unique_ptr<ILayer<T>>> layers;
     std::unique_ptr<IOptimizer<T>> optimizer;
     std::unique_ptr<ILoss<T>> loss;
-    std::unique_ptr<IInitializer> initializer;
+    std::unique_ptr<IInitializer<T>> initializer;
 };

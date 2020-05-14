@@ -30,7 +30,7 @@ public:
 
     virtual void SetTrain(bool value) = 0;
 
-    virtual void Initialize(const std::unique_ptr<IInitializer>& initializer) = 0;
+    virtual void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) = 0;
 
     virtual ~ILayer() = default;
 };

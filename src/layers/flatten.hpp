@@ -86,7 +86,7 @@ public:
         ar(input_dim);
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     };
 

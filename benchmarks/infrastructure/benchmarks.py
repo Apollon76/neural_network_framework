@@ -46,6 +46,7 @@ def run_nn_framework(test_name, data_path, epochs, batch_size):
         'mkdir -p /tmp/nn_framework_build',
         'cd /tmp/nn_framework_build',
         'cmake -DCMAKE_BUILD_TYPE=Release /tmp/nn_framework',
+        'cd /tmp/nn_framework_build/benchmarks',
         'make',
         'cd /tmp/nn_framework/benchmarks',
         f'/tmp/nn_framework_build/benchmarks/runner --test-name {test_name} --data-path {data_path} --epochs {epochs} --batch-size {batch_size}',

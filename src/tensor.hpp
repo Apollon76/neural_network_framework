@@ -220,17 +220,28 @@ public:
         return tensor;
     }
 
-    static Tensor<T> filledRandom(TensorDimensions d, std::function<T()> generateRandom) {
-        if (d.size() == 2) {
-            std::vector<std::vector<T>> values(d[0], std::vector<T>(d[1]));
-            for (int i = 0; i < d[0]; ++i) {
-                for (int j = 0; j < d[1]; ++j) {
-                    values[i][j] = generateRandom();
-                }
-            }
-            return fromVector(values);
-        }
-        throw std::exception();
+    static Tensor<T> filledRandom(TensorDimensions d, const std::function<T()>& generateRandom) {
+        auto emptyTensor = Tensor<T>(d, createValuesContainer<T>(d));
+        return emptyTensor.template Transform<T>(
+                [&d, &generateRandom](const arma::Mat<T> &) {
+                    if (d.size() == 0) {
+                        return arma::Mat<T>();
+                    } else if (d.size() == 1) {
+                        auto res = arma::Mat<T>(d[0], 1);
+                        for (int i = 0; i < d[0]; ++i) {
+                            res(i, 1) = generateRandom();
+                        }
+                        return res;
+                    } else {
+                        auto res = arma::Mat<T>(d[d.size() - 2], d[d.size() - 1]);
+                        for (int i = 0; i < d[d.size() - 2]; ++i) {
+                            for (int j = 0; j < d[d.size() - 1]; ++j) {
+                                res(i, j) = generateRandom();
+                            }
+                        }
+                        return res;
+                    }
+                });
     }
 
     Tensor<T> Rows(const arma::uvec& rows) const {

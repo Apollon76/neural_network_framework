@@ -45,7 +45,7 @@ public:
 
     void SetTrain(bool) override {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     };
 
@@ -101,7 +101,7 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     };
 };
@@ -159,7 +159,7 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     };
 };
@@ -205,7 +205,7 @@ public:
     template<class Archive>
     void serialize(Archive &) {}
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     };
 };

@@ -13,14 +13,10 @@ public:
     Convolution2dLayer(): padding(ConvolutionPadding::Same) {}
 
     Convolution2dLayer(int input_channels, int filters, int kernel_height, int kernel_width,
-                       ConvolutionPadding _padding)
-            : weights(Tensor<T>::filled(
-            {
-                    filters,
-                    input_channels,
-                    kernel_height,
-                    kernel_width
-            }, arma::fill::randu)),
+                       ConvolutionPadding _padding, std::unique_ptr<IInitializer<T>> initializer=nullptr)
+            : weights(initializer
+                      ? initializer->generate({filters, input_channels, kernel_height, kernel_width})
+                      : Tensor<T>::filled({filters, input_channels, kernel_height, kernel_width}, arma::fill::randu)),
               padding(_padding) {
     }
 
@@ -115,7 +111,7 @@ public:
         padding = p;
     }
 
-    void Initialize(const std::unique_ptr<IInitializer>& initializer) override {
+    void Initialize(const std::unique_ptr<IInitializer<T>>& initializer) override {
         std::ignore = initializer;
     }
 
