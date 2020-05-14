@@ -17,15 +17,11 @@ arma::SizeMat Conv2dSize(const arma::SizeMat &matrix, const arma::SizeMat &kerne
 template<typename T>
 arma::Mat<T> Conv2d(const arma::Mat<T> &matrix, const arma::Mat<T> &kernel, ConvolutionPadding padding) {
     auto result = arma::Mat<T>(Conv2dSize(arma::size(matrix), arma::size(kernel), padding), arma::fill::zeros);
-    for (arma::uword k_x = 0; k_x < kernel.n_rows; k_x++) {
-        auto row_multiplier = arma::Mat<T>(matrix.n_cols, matrix.n_cols, arma::fill::zeros);
-        for (arma::uword y = 0; y < matrix.n_cols; y++) {
-            for (arma::uword k_y = 0; y + k_y < matrix.n_cols && k_y < kernel.n_cols; k_y++) {
-                row_multiplier(y + k_y, y) = kernel(k_x, k_y);
-            }
+    for (arma::uword i = 0; i < kernel.n_rows; i++) {
+        for (arma::uword j = 0; j < kernel.n_cols; j++) {
+            result.submat(0, 0, matrix.n_rows - i - 1, matrix.n_cols - j - 1) +=
+                    (matrix.submat(i, j, matrix.n_rows - 1, matrix.n_cols - 1) * kernel(i, j));
         }
-        arma::Mat<T> row_result = matrix * row_multiplier;
-        result.rows(0, matrix.n_rows - k_x - 1) += row_result.rows(k_x, matrix.n_rows - 1);
     }
     return result;
 }

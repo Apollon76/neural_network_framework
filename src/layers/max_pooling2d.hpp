@@ -29,20 +29,16 @@ public:
         auto pooled = Tensor<T>::filled(new_dimensions, arma::fill::zeros);
         extremums = Tensor<arma::uword>::filled(new_dimensions, arma::fill::zeros);
         input.ForEach([this, &pooled](int a, int b, int c, const arma::Mat<T> &v) {
-            for (arma::uword row = 0; row < v.n_rows; row += kernel_height) {
-                for (arma::uword col = 0; col < v.n_cols; col += kernel_width) {
-                    int last_row = std::min(v.n_rows - 1, row + kernel_height - 1);
-                    int last_col = std::min(v.n_cols - 1, col + kernel_width - 1);
-                    arma::uword relative_extremum = v.submat(row, col, last_row, last_col).index_max();
-                    auto index_pair = arma::ind2sub(
-                            arma::size(last_row - row + 1, last_col - col + 1), relative_extremum
-                    );
-                    arma::uword extremum = arma::sub2ind(arma::size(v), row + index_pair[0], col + index_pair[1]);
-                    auto extremum_value = v(extremum);
-                    int x = row / kernel_height;
-                    int y = col / kernel_width;
-                    extremums.Field().at(a, b, c)(x, y) = extremum;
-                    pooled.Field().at(a, b, c)(x, y) = extremum_value;
+            auto& currPooled = pooled.Field().at(a, b, c);
+            auto& currExtremum = extremums.Field().at(a, b, c);
+            for (arma::uword row = 0, row_idx = 0; row < currPooled.n_rows; row++, row_idx += kernel_height) {
+                for (arma::uword col = 0, col_idx = 0; col < currPooled.n_cols; col++, col_idx += kernel_width) {
+                    currExtremum(row, col) = v(
+                            arma::span(row_idx, row_idx + kernel_height - 1),
+                            arma::span(col_idx, col_idx + kernel_height - 1)).index_max();
+                    currPooled(row, col) = v(
+                            arma::span(row_idx, row_idx + kernel_height - 1),
+                            arma::span(col_idx, col_idx + kernel_height - 1)).max();
                 }
             }
         });
@@ -53,12 +49,14 @@ public:
             const Tensor<T> &inputs,
             const Tensor<T> &output_gradients
     ) const override {
+        ensure(output_gradients.D == extremums.D);
         auto gradients = Tensor<T>::filled(inputs.D, arma::fill::zeros);
         output_gradients.ForEach([this, &gradients](int a, int b, int c, const arma::Mat<T> &v) {
             auto &result = gradients.Field()(a, b, c);
             for (arma::uword row = 0; row < v.n_rows; row++) {
                 for (arma::uword col = 0; col < v.n_cols; col++) {
-                    result(extremums.Field()(a, b, c)(row, col)) = v(row, col);
+                    result.submat(row * kernel_height, col * kernel_height, (row + 1) * kernel_height - 1,
+                                  (col + 1) * kernel_height - 1)(extremums.Field()(a, b, c)(row, col)) = v(row, col);
                 }
             }
         });
@@ -84,8 +82,8 @@ public:
 
 private:
     void UpdateDimensions(int &height, int &width) const {
-        height = (height + kernel_height - 1) / kernel_height;
-        width = (width + kernel_width - 1) / kernel_width;
+        height = height / kernel_height;
+        width = width / kernel_width;
     }
 
     int kernel_height, kernel_width;
