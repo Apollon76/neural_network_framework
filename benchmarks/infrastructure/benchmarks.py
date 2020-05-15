@@ -6,6 +6,7 @@ import re
 import os
 import random
 import string
+import argparse
 
 
 def prepare(test_name):
@@ -35,12 +36,14 @@ def mktempfile():
     return path
 
 
-def run_nn_framework(test_name, data_path, epochs, batch_size):
+def run_nn_framework(test_name, data_path, epochs, batch_size, perf_callback=False):
     repo_path = os.path.dirname(os.getcwd())
     results_file = mktempfile()
     build_cache_path = '/tmp/nn-framework-benchmarks-build-cache'
 
     image_id = build_docker('../docker')
+
+    perf_callback_arg = '--perf-callback 1' if perf_callback else ''
 
     inner_commands = [
         'mkdir -p /tmp/nn_framework_build',
@@ -49,7 +52,7 @@ def run_nn_framework(test_name, data_path, epochs, batch_size):
         'cd /tmp/nn_framework_build/benchmarks',
         'make',
         'cd /tmp/nn_framework/benchmarks',
-        f'/tmp/nn_framework_build/benchmarks/runner --test-name {test_name} --data-path {data_path} --epochs {epochs} --batch-size {batch_size}',
+        f'/tmp/nn_framework_build/benchmarks/runner --test-name {test_name} --data-path {data_path} --epochs {epochs} --batch-size {batch_size} {perf_callback_arg}',
     ]
 
     inner_commands_joined = ' && '.join(inner_commands)
@@ -74,8 +77,9 @@ def run_nn_framework(test_name, data_path, epochs, batch_size):
 
     subprocess.check_call(' '.join(command), shell=True)
 
-    with open(results_file) as f:
-        return json.loads(f.read())
+    if not perf_callback:
+        with open(results_file) as f:
+            return json.loads(f.read())
 
 
 def run_keras(test_name, data_path, epochs, batch_size):
@@ -159,19 +163,31 @@ def main():
         print('Script should be called in ./benchmarks directory')
         exit(1)
 
-    tests = [
-        ('mnist', 32, 10),
-        ('cifar', 128, 10),
-    ]
-    for test_name, batch_size, epochs in tests:
-        data_path = f'cases/{test_name}/data'
+    parser = argparse.ArgumentParser(description='Run model fitting and evaluation')
+    parser.add_argument('-p', '--perf-callback', type=bool, default=False, help='run mnist with perf callback')
+    args = parser.parse_args()
+    if args.perf_callback:
+        tests = [
+            ('mnist', 32, 10),
+        ]
+        for test_name, batch_size, epochs in tests:
+            data_path = f'cases/{test_name}/data'
+            prepare(test_name)
+            run_nn_framework(test_name, data_path, epochs, batch_size, True)
+    else:
+        tests = [
+            ('mnist', 32, 10),
+            ('cifar', 128, 20),
+        ]
+        for test_name, batch_size, epochs in tests:
+            data_path = f'cases/{test_name}/data'
 
-        prepare(test_name)
+            prepare(test_name)
 
-        keras_result = run_keras(test_name, data_path, epochs, batch_size)
-        nn_framework_result = run_nn_framework(test_name, data_path, epochs, batch_size)
+            keras_result = run_keras(test_name, data_path, epochs, batch_size)
+            nn_framework_result = run_nn_framework(test_name, data_path, epochs, batch_size)
 
-        plot_results(test_name, keras_result, nn_framework_result)
+            plot_results(test_name, keras_result, nn_framework_result)
 
     print('Everything done')
 

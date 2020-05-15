@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-./infrastructure/benchmarks.py
+./infrastructure/benchmarks.py "$@"

@@ -12,9 +12,45 @@
 
 ![Results screenshot](/benchmarks/benchmark-results/mnist/metrics.png)
 
-По производительности мы проигрываем примерно в 3 раза, что в целом не так плохо, если соотносить время существования keras и tensorflow с нашим проектом :)
+По производительности мы проигрываем примерно в 2 раза, что в целом не так плохо, если соотносить время существования keras и tensorflow с нашим проектом :)
 
 ![Results screenshot](/benchmarks/benchmark-results/mnist/fitting-time.png)
+
+Попробуем подробнее посмотреть на то, куда же уходит время, отдельно запустив обучение со специальным колбеком - PerformanceMetricsCallback:
+
+```
+Metrics report: 
+    Full epoch          : total duration=41579ms, average duration=4157ms, last duration=4221ms
+    Full batch          : total duration=29541ms, average duration=1ms
+    Gradient calculation: total duration=18ms, average duration=0ms
+    Forward pass(total times)
+            7680ms: Dense[785 x 100 (including bias)]
+            1363ms: SigmoidActivation
+             575ms: SoftmaxActivation
+             424ms: Dense[101 x 10 (including bias)]
+    Backward pass(total times)
+            7762ms: Dense[785 x 100 (including bias)]
+            1271ms: SigmoidActivation
+             425ms: Dense[101 x 10 (including bias)]
+             423ms: SoftmaxActivation
+    Gradient step(total times)
+            8178ms: Dense[785 x 100 (including bias)]
+             123ms: Dense[101 x 10 (including bias)]
+               0ms: SigmoidActivation
+               0ms: SoftmaxActivation
+    Apply gradients(total times)
+             535ms: Dense[785 x 100 (including bias)]
+              20ms: Dense[101 x 10 (including bias)]
+               0ms: SigmoidActivation
+               0ms: SoftmaxActivation
+```
+
+В отчёте выше приведена статистика суммарного времени, затраченного на разные этапы обучения сети. \
+В сумме выходит `28779ms` - это практически равно `Full batch total duration=29541ms` - суммарному времени, потраченному непосредственно на обучение на батчах.\
+При этом суммарное время всех эпох (`Full epoch: total duration=41579ms`) больше примерно на 30% - где-то потратили 10 секунд. Дело тут в том, что помимо непосредственно обучения время уходит на генерацию батчей и на оценку модели после каждой эпохи.
+
+К сожалению, даже на такой простой архитектуре мы отстаём от keras. Можно было бы попробовать сэкономить время на предварительной подготовке данных и оценке модели (выше мы видели, что на это уходит много времени). \
+Непосредственно вычисления вряд ли удастся сильно ускорить. Наверняка keras тут имеет большое преимущество за счет GradientTape, который, вероятно, позволяет ему на такой простой сети проводить вычисления сразу по всем слоям: снижаются накладные расходы.
 
 Архитектура модели была такая (в плюсах такая же):
 
@@ -30,7 +66,8 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categ
 
 ### cifar
 
-Здесь результаты уже не такие хорошие. Модель постепенно сходится, так что, возможно, при большем числе эпох она бы и догнала keras. Медленную сходимость нашего фреймворка можно объяснить тем, что `keras` использует хитрые распределения для инициализации весов, что позволяет архитектуре быстрее сходится.
+На удивление скор после 20 эпох у нас получился даже лучше, чем у keras. Возможно, он бы сошёлся после большего числа эпох, а может какие-то оптимизации производительности в нём влияют на качество. \
+Важно оказалось использовать хорошую инициализацию весов, без неё у нас модель сходилась гораздо медленее. Мы в итоге взяли GlorotUniform - такой же, как в керасе.
 
 ![Results screenshot](/benchmarks/benchmark-results/cifar/metrics.png)
 
@@ -38,7 +75,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categ
 
 ![Results screenshot](/benchmarks/benchmark-results/cifar/fitting-time.png)
 
-Здесь keras далеко впереди, скорее всего за счёт того, что нам пришлось самостоятельно реализовывать операцию конволюции двух тензоров, так как судя по документации Armadillo нативная реализация конволюции в библиотеке сырая и неоптимизированная, а также она не совсем подходит для нашей архитектуры - легко было бы запутаться.
+Здесь keras далеко впереди, быстрее он примерно в 10 раз. Скорее всего за счёт того, что нам пришлось самостоятельно реализовывать операцию конволюции двух тензоров, так как судя по документации Armadillo нативная реализация конволюции в библиотеке сырая и неоптимизированная, а также она не совсем подходит для нашей архитектуры - легко было бы запутаться.
 
 Архитектура модели была такая (в плюсах такая же):
 
@@ -58,6 +95,8 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['ca
 ### Про механику бенчмарков
 
 Запустить бенмарки можно командой ```./run.sh```, находясь в **директории ```benchmarks```**.
+
+Для запуска с PerformanceMetricsCallback, нужно выполнить ```./run.sh  --perf-callback 1```, так же находясь в **директории ```benchmarks```**.
 
 Для работы бенчмарков потребуется docker.
 

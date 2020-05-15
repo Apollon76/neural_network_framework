@@ -14,27 +14,31 @@ public:
     {
     }
 
+    [[nodiscard]] std::chrono::milliseconds TotalDuration() const {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(total_duration);
+    }
+
     [[nodiscard]] std::chrono::milliseconds AverageDuration() const {
         if (metrics_count == 0) {
             return std::chrono::milliseconds::zero();
         }
-        return total_duration / metrics_count;
+        return std::chrono::duration_cast<std::chrono::milliseconds>(total_duration / metrics_count);
     }
 
     [[nodiscard]] std::chrono::milliseconds LastDuration() const {
-        return last_duration;
+        return std::chrono::duration_cast<std::chrono::milliseconds>(last_duration);
     }
 
     template<typename Duration>
     void AddMetric(const Duration &duration) {
-        last_duration = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-        total_duration += std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+        last_duration = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+        total_duration += std::chrono::duration_cast<std::chrono::microseconds>(duration);
         metrics_count++;
     }
 
 private:
-    std::chrono::milliseconds total_duration;
-    std::chrono::milliseconds last_duration;
+    std::chrono::microseconds total_duration;
+    std::chrono::microseconds last_duration;
     int64_t metrics_count;
 };
 
@@ -50,7 +54,8 @@ struct PerformanceMetrics {
 
 std::string ReportMetric(const std::string &caption, Metrics &metrics, bool with_last_duration) {
     std::stringstream report;
-    report << caption << ": average duration=" << metrics.AverageDuration().count() << "ms";
+    report << caption << ": total duration=" << metrics.TotalDuration().count() << "ms";
+    report << ", average duration=" << metrics.AverageDuration().count() << "ms";
     if (with_last_duration) {
         report << ", last duration=" << metrics.LastDuration().count() << "ms";
     }
@@ -60,14 +65,14 @@ std::string ReportMetric(const std::string &caption, Metrics &metrics, bool with
 
 std::string ReportMetricMap(const std::string &caption, std::map<std::string, Metrics> &metrics) {
     std::stringstream report;
-    report << caption << std::endl;
+    report << caption << "(total times)" << std::endl;
     auto values = std::vector<std::pair<std::string, Metrics>>(metrics.begin(), metrics.end());
     std::sort(values.begin(), values.end(),
               [](const std::pair<std::string, Metrics> &a, const std::pair<std::string, Metrics> &b) {
-                  return a.second.AverageDuration() > b.second.AverageDuration();
+                  return a.second.TotalDuration() > b.second.TotalDuration();
               });
     for (auto &&[name, metric] : values) {
-        report << std::string(8, ' ') << std::setw(8) << metric.AverageDuration().count();
+        report << std::string(8, ' ') << std::setw(8) << metric.TotalDuration().count();
         report << "ms: " << name << std::endl;
     }
     return report.str();
@@ -94,58 +99,58 @@ public:
 
     std::optional<std::function<CallbackSignal(const Tensor<T> &prediction, double loss)>>
     Fit(const INeuralNetwork<T> *, int) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start](const Tensor<T> &, double) {
-            metrics.fit_metrics.AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.fit_metrics.AddMetric(std::chrono::high_resolution_clock::now() - start);
             std::cout << ReportMetrics(metrics);
             return CallbackSignal::Continue;
         };
     }
 
     std::optional<std::function<void()>> FitBatch(const nn_framework::data_processing::Data<T> &, int, int) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start]() {
-            metrics.fit_batch_metrics.AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.fit_batch_metrics.AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 
     std::optional<std::function<void(const Tensor<T> &output)>>
     LayerForwardPass(const ILayer<T> *layer, const Tensor<T> &) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start, layer](const Tensor<T> &) {
-            metrics.forward_pass_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.forward_pass_metrics[layer->GetName()].AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 
     std::optional<std::function<void(const Gradients<T> &gradients)>>
     LayerBackwardPass(const ILayer<T> *layer, const Tensor<T> &, const Tensor<T> &) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start, layer](const Gradients<T> &) {
-            metrics.backward_pass_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.backward_pass_metrics[layer->GetName()].AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 
     std::optional<std::function<void(const Tensor<T> &output_gradients)>>
     OptimizerGradients(const Tensor<T> &) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start](const Tensor<T> &) {
-            metrics.gradients_metrics.AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.gradients_metrics.AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 
     std::optional<std::function<void(const Tensor<T> &gradient_step)>>
     OptimizerGradientStep(const ILayer<T> *layer, const Tensor<T> &) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start, layer](const Tensor<T> &) {
-            metrics.gradient_step_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.gradient_step_metrics[layer->GetName()].AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 
     std::optional<std::function<void()>>
     LayerApplyGradients(const ILayer<T> *layer, const Tensor<T> &) override {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         return [this, start, layer]() {
-            metrics.apply_gradients_metrics[layer->GetName()].AddMetric(std::chrono::steady_clock::now() - start);
+            metrics.apply_gradients_metrics[layer->GetName()].AddMetric(std::chrono::high_resolution_clock::now() - start);
         };
     }
 

@@ -6,6 +6,7 @@
 #include <src/tensor.hpp>
 #include <benchmarks/cases/mnist/config.hpp>
 #include <benchmarks/cases/cifar/config.hpp>
+#include <src/callbacks/performance_metrics_callback.hpp>
 
 class Action {
 public:
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
     options.add_options()("data-path", "path to data", cxxopts::value<std::string>());
     options.add_options()("epochs", "number of epochs to fit", cxxopts::value<int>()->default_value("5"));
     options.add_options()("batch-size", "batch size used while fitting", cxxopts::value<int>()->default_value("32"));
+    options.add_options()("perf-callback", "add performance callback", cxxopts::value<bool>()->default_value("0"));
     auto parsed_args = options.parse(argc, argv);
     ensure(parsed_args["test-name"].count(), "test-name is required arg");
     ensure(parsed_args["data-path"].count(), "data-path is required arg");
@@ -67,6 +69,7 @@ int main(int argc, char **argv) {
     auto data_path = parsed_args["data-path"].as<std::string>();
     auto epochs = parsed_args["epochs"].as<int>();
     auto batch_size = parsed_args["batch-size"].as<int>();
+    auto perf_callback = parsed_args["perf-callback"].as<bool>();
 
     std::shared_ptr<Config> config;
     if (test_name == "mnist") {
@@ -100,23 +103,30 @@ int main(int argc, char **argv) {
     std::unordered_map<int, Metric> metrics;
     long long totalMsSpent = 0;
     {
-        auto callback = std::make_shared<EpochCallback<float>>(
-                [&x_test, &y_test, &y_train, &config, &metrics, epochs](const INeuralNetwork<float> *model, int epoch) {
-                    return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch, epochs](const Tensor<float>& train_prediction, double train_loss) {
-                        auto test_prediction = model->Predict(x_test);
-                        Metric metric{};
-                        metric.train_score = config->GetScore(y_train, train_prediction);
-                        metric.test_score = config->GetScore(y_test, test_prediction);
-                        metric.train_loss = train_loss;
-                        metric.test_loss = model->GetLoss()->GetLoss(test_prediction, y_test);
-                        metrics[epoch] = metric;
-                        std::cerr << "Epoch: " << epoch + 1 << "/" << epochs
-                                  << " train score: " << metric.train_score << " train loss: " << metric.train_loss
-                                  << " test score: " << metric.test_score << " test loss: " << metric.test_loss
-                                  << std::endl;
-                        return CallbackSignal::Continue;
-                    };
-                });
+        std::shared_ptr<ANeuralNetworkCallback<float>> callback;
+        if (perf_callback) {
+            callback = std::make_shared<PerformanceMetricsCallback<float>>();
+        } else {
+            callback = std::make_shared<EpochCallback<float>>(
+                    [&x_test, &y_test, &y_train, &config, &metrics, epochs](const INeuralNetwork<float> *model,
+                                                                            int epoch) {
+                        return [&x_test, &y_test, &y_train, &config, &metrics, model, epoch, epochs](
+                                const Tensor<float> &train_prediction, double train_loss) {
+                            auto test_prediction = model->Predict(x_test);
+                            Metric metric{};
+                            metric.train_score = config->GetScore(y_train, train_prediction);
+                            metric.test_score = config->GetScore(y_test, test_prediction);
+                            metric.train_loss = train_loss;
+                            metric.test_loss = model->GetLoss()->GetLoss(test_prediction, y_test);
+                            metrics[epoch] = metric;
+                            std::cerr << "Epoch: " << epoch + 1 << "/" << epochs
+                                      << " train score: " << metric.train_score << " train loss: " << metric.train_loss
+                                      << " test score: " << metric.test_score << " test loss: " << metric.test_loss
+                                      << std::endl;
+                            return CallbackSignal::Continue;
+                        };
+                    });
+        }
         Action action("Fitting model for " + std::to_string(epochs) + " epochs");
         model.Fit(x_train, y_train, epochs, batch_size, true, callback);
         totalMsSpent = action.GetSpentMs();
@@ -129,23 +139,25 @@ int main(int argc, char **argv) {
     }
     std::cerr << "Evaluation result: " << score << std::endl;
 
-    nlohmann::json result = {
-            {"epochs", epochs},
-            {"batch_size", batch_size},
-            {"time_ms_total", totalMsSpent},
-            {"metrics", {}}
-    };
+    if (!perf_callback) {
+        nlohmann::json result = {
+                {"epochs",        epochs},
+                {"batch_size",    batch_size},
+                {"time_ms_total", totalMsSpent},
+                {"metrics",       {}}
+        };
 
-    for (const auto& [epoch, metric] : metrics) {
-        result["metrics"]["loss"]["train"].push_back({epoch, metric.train_loss});
-        result["metrics"]["loss"]["test"].push_back({epoch, metric.test_loss});
-        result["metrics"][config->GetScoreName()]["train"].push_back({epoch, metric.train_score});
-        result["metrics"][config->GetScoreName()]["test"].push_back({epoch, metric.train_score});
-    }
+        for (const auto&[epoch, metric] : metrics) {
+            result["metrics"]["loss"]["train"].push_back({epoch, metric.train_loss});
+            result["metrics"]["loss"]["test"].push_back({epoch, metric.test_loss});
+            result["metrics"][config->GetScoreName()]["train"].push_back({epoch, metric.train_score});
+            result["metrics"][config->GetScoreName()]["test"].push_back({epoch, metric.train_score});
+        }
 
-    {
-        std::ofstream result_file("/tmp/results.json");
-        result_file << result.dump() << std::endl;
+        {
+            std::ofstream result_file("/tmp/results.json");
+            result_file << result.dump() << std::endl;
+        }
     }
 
     return 0;
