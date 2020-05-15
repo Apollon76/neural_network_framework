@@ -30,7 +30,7 @@ namespace benchmarks {
                                                std::make_unique<CategoricalCrossEntropyLoss<float>>());
 
             model
-                    .AddLayer<Convolution2dLayer>(3, 10, 3, 3, ConvolutionPadding::Same, std::make_unique<GlorotUniformInitializer<float>>())
+                    .AddLayer<Convolution2dLayer>(3, 3, 3, 3, ConvolutionPadding::Same, std::make_unique<GlorotUniformInitializer<float>>())
                     .AddLayer<ReLUActivationLayer>()
                     .AddLayer<MaxPooling2dLayer>(2, 2)
 

@@ -161,7 +161,7 @@ def main():
 
     tests = [
         ('mnist', 32, 10),
-        ('cifar', 128, 5),
+        ('cifar', 128, 10),
     ]
     for test_name, batch_size, epochs in tests:
         data_path = f'cases/{test_name}/data'
