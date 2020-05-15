@@ -81,7 +81,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categ
 
 ```
 model = Sequential([
-    L.Conv2D(10, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+    L.Conv2D(3, (3, 3), activation='relu', input_shape=(32, 32, 3)),
     L.MaxPooling2D((2, 2)),
     L.Conv2D(5, (3, 3), activation='relu', input_shape=(32, 32, 3)),
     L.MaxPooling2D((2, 2)),
