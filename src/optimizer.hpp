@@ -11,6 +11,7 @@ template<typename T>
 class IOptimizer {
 public:
     [[nodiscard]] virtual Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) = 0;
+    [[nodiscard]] virtual Tensor<T> GetGradientStep(Tensor<T>&& gradients, const ILayer<T> *layer) = 0;
 
     virtual ~IOptimizer() = default;
 };
@@ -23,11 +24,14 @@ public:
     explicit Optimizer(double _learning_rate) : learning_rate(_learning_rate) {}
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
-        UNUSED(layer)
-        return gradients.template Transform<T>([this](const arma::Mat<T> &v) {
-            arma::Mat<T> value = -v * learning_rate;
-            return value;
+        return GetGradientStep(std::move(Tensor<T>(gradients)), layer);
+    }
+
+    [[nodiscard]] Tensor<T> GetGradientStep(Tensor<T>&& gradients, const ILayer<T> *) override {
+        gradients.ForEach([this](int, int, int, arma::Mat<T> &v) {
+            v *= -learning_rate;
         });
+        return std::move(gradients);
     }
 
     template<class Archive>
@@ -60,6 +64,11 @@ public:
         return previous_values[layer] = Tensor<T>(
                 gradients.D, momentum * previous_gradient.Values() - learning_rate * gradients.Values()
         );
+    }
+
+    [[nodiscard]] Tensor<T> GetGradientStep(Tensor<T>&& gradients, const ILayer<T> *layer) override {
+        const Tensor<T> tensor(gradients);
+        return GetGradientStep(tensor, layer);
     }
 
     template<class Archive>
@@ -105,6 +114,11 @@ public:
         });
     }
 
+    [[nodiscard]] Tensor<T> GetGradientStep(Tensor<T>&& gradients, const ILayer<T> *layer) override {
+        const Tensor<T> tensor(gradients);
+        return GetGradientStep(tensor, layer);
+    }
+
     template<class Archive>
     void serialize(Archive &ar) {
         ar(learning_rate, rho, epsilon);
@@ -131,16 +145,24 @@ public:
     }
 
     [[nodiscard]] Tensor<T> GetGradientStep(const Tensor<T> &gradients, const ILayer<T> *layer) override {
-        auto previous_gradient_avg = GetOrCreatePrevious(layer, average_of_gradients, arma::size(gradients.Values()));
-        auto previous_square_gradient_avg = GetOrCreatePrevious(layer, average_of_squares_of_gradients,
-                                                                arma::size(gradients.Values()));
+        return GetGradientStep(std::move(Tensor<T>(gradients)), layer);
+    }
 
-        auto cur_avg = average_of_gradients[layer] = beta_1 * previous_gradient_avg + (1 - beta_1) * gradients.Values();
-        auto cur_square_avg = average_of_squares_of_gradients[layer] =
-                                      beta_2 * previous_square_gradient_avg +
-                                      (1 - beta_2) * arma::square(gradients.Values());
+    [[nodiscard]] Tensor<T> GetGradientStep(Tensor<T>&& gradients, const ILayer<T> *layer) override {
+        if (!average_of_squares_of_gradients.count(layer)) {
+            average_of_squares_of_gradients[layer].zeros(arma::size(gradients.Values()));
+        }
+        auto& layer_average_of_squares_of_gradients = average_of_squares_of_gradients[layer];
 
-        return Tensor<T>(gradients.D, -learning_rate * gradients.Values() / arma::sqrt(cur_square_avg + epsilon));
+        layer_average_of_squares_of_gradients *= beta_2;
+        layer_average_of_squares_of_gradients += (1 - beta_2) * arma::square(gradients.Values());
+
+        gradients.ForEach([this, &layer_average_of_squares_of_gradients](int, int, int, arma::Mat<T> &v) {
+            v *= -learning_rate;
+            v /= arma::sqrt(layer_average_of_squares_of_gradients + epsilon);
+        });
+
+        return std::move(gradients);
     }
 
     template<class Archive>
@@ -166,21 +188,10 @@ public:
 
 
 private:
-    arma::Mat<T> GetOrCreatePrevious(const ILayer<T> *layer, mapping_type &mapping, arma::SizeMat size) {
-        auto it = mapping.find(layer);
-        arma::Mat<T> previous;
-        if (it != mapping.end()) {
-            return it->second;
-        }
-        previous.zeros(size);
-        return previous;
-    }
-
     double learning_rate;
     double beta_1;
     double beta_2;
     double epsilon;
-    mapping_type average_of_gradients;
     mapping_type average_of_squares_of_gradients;
 };
 

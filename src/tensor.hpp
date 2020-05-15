@@ -261,6 +261,19 @@ public:
         return new_data;
     }
 
+    void SetRows(const arma::uvec& rows, const Tensor<T>& data) {
+        if (Rank() <= 2) {
+            values.at(0).rows(rows) = data.Values();
+        } else if (Rank() <= 5) {
+            size_t ind = 0;
+            for (auto row : rows) {
+                values.row(row) = data.values.row(ind);
+            }
+        } else {
+            throw std::logic_error("too many dimensions");
+        }
+    }
+
     TensorDimensions D;
 private:
     arma::field<arma::Mat<T>> values;

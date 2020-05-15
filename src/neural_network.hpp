@@ -88,10 +88,8 @@ public:
         }
         for (int i = 0; i < epochs; i++) {
             auto fitEpochCallback = callback->Fit(this, i);
-            DoFit(input, output, batch_size, shuffle, *callback);
+            auto prediction = DoFit(input, output, batch_size, shuffle, *callback);
             if (fitEpochCallback != std::nullopt) {
-                // todo (sivukhin): try to avoid unnecessary calculation here
-                auto prediction = Predict(input);
                 auto predictionLoss = loss->GetLoss(prediction, output);
                 auto signal = fitEpochCallback.value()(prediction, predictionLoss);
                 if (signal == CallbackSignal::Stop) {
@@ -127,26 +125,29 @@ public:
     }
 
 private:
-    void DoFit(const Tensor<T> &input, const Tensor<T> &output, size_t batch_size, bool shuffle,
-               ANeuralNetworkCallback<T> &callback) {
+    Tensor<T> DoFit(const Tensor<T> &input, const Tensor<T> &output, size_t batch_size, bool shuffle,
+                    ANeuralNetworkCallback<T> &callback) {
         auto real_batch_size = (batch_size != NoBatches) ? batch_size : input.D[0];
-
-        std::vector<Data<T>> batches = GenerateBatches<T>(Data<T>{input, output}, real_batch_size, shuffle);
+        auto batches = GenerateBatches<T>(input.D[0], real_batch_size, shuffle);
+        auto predictions = Tensor<T>::filled(output.D, arma::fill::zeros);
         int batch_id = 0;
-        for (const Data<T> &batch: batches) {
+        for (const arma::uvec& batch_inds: batches) {
+            auto batch = Data<T>{input.Rows(batch_inds), output.Rows(batch_inds)};
             auto fitBatchAction = callback.FitBatch(batch, batch_id++, batches.size());
-            DoFitBatch(batch, callback);
+            auto pred = DoFitBatch(batch, callback);
+            predictions.SetRows(batch_inds, pred);
             if (fitBatchAction != std::nullopt) {
                 fitBatchAction.value()();
             }
         }
+        return predictions;
     }
 
-    void DoFitBatch(const Data<T> &batch, ANeuralNetworkCallback<T> &callback) {
+    Tensor<T> DoFitBatch(const Data<T> &batch, ANeuralNetworkCallback<T> &callback) {
         std::vector<Tensor<T>> inter_outputs = {batch.input};
         for (auto &&layer : layers) {
             auto forwardAction = callback.LayerForwardPass(layer.get(), inter_outputs.back());
-            inter_outputs.push_back(layer->Apply(inter_outputs.back()));
+            inter_outputs.emplace_back(std::move(layer->Apply(inter_outputs.back())));
             if (forwardAction != std::nullopt) {
                 forwardAction.value()(inter_outputs.back());
             }
@@ -163,7 +164,7 @@ private:
                 backwardAction.value()(gradients);
             }
             auto gradientStepAction = callback.OptimizerGradientStep(layers[i].get(), gradients.layer_gradients);
-            auto gradients_to_apply = optimizer->GetGradientStep(gradients.layer_gradients, layers[i].get());
+            auto gradients_to_apply = optimizer->GetGradientStep(std::move(gradients.layer_gradients), layers[i].get());
             if (gradientStepAction != std::nullopt) {
                 gradientStepAction.value()(gradients_to_apply);
             }
@@ -174,6 +175,7 @@ private:
             }
             last_output_gradient = gradients.input_gradients;
         }
+        return inter_outputs.back();
     }
 
     std::vector<std::unique_ptr<ILayer<T>>> layers;

@@ -11,13 +11,7 @@ namespace nn_framework::scoring {
         ensure(y_true.Rank() == 2);
         arma::ucolvec y_true_vals = arma::index_max(y_true.Values(), 1);
         arma::ucolvec y_pred_vals = arma::index_max(y_pred.Values(), 1);
-        arma::s64 cnt = 0;
-        for (int i = 0; i < y_true.D[0]; i++) {
-            if (y_true_vals.at(i) == y_pred_vals.at(i)) {
-                cnt++;
-            }
-        }
-        return static_cast<double>(cnt) / y_true.D[0];
+        return arma::as_scalar(arma::mean(arma::conv_to<arma::mat>::from(y_true_vals == y_pred_vals)));
     }
 
     template<typename T>

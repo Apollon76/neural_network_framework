@@ -112,36 +112,16 @@ namespace nn_framework::data_processing {
     };
 
     template<typename T>
-    Data<T> ShuffleData(const Data<T>& data) {
-        size_t sz = data.input.D[0];
-        arma::uvec ordering = arma::shuffle(arma::linspace<arma::uvec>(0, sz - 1, sz));
+    std::vector<arma::uvec> GenerateBatches(size_t size, size_t batch_size, bool shuffle) {
+        arma::uvec ordering = shuffle
+                              ? arma::shuffle(arma::linspace<arma::uvec>(0, size - 1, size))
+                              : arma::linspace<arma::uvec>(0, size - 1, size);
 
-        auto new_input = data.input.Rows(ordering);
-        auto new_output = data.output.Rows(ordering);
-
-        return Data<T>{
-                Tensor(data.input.D, new_input.Field()),
-                Tensor(data.output.D, new_output.Field())
-        };
-    }
-
-    template<typename T>
-    std::vector<Data<T>> GenerateBatches(Data<T> data, size_t batch_size, bool shuffle) {
-        if (shuffle) {
-            data = ShuffleData<T>({data.input, data.output});
-        }
-        DLOG(INFO) << "data dim [input=" << FormatDimensions(data.input.D) << " "
-                   << "output=" << FormatDimensions(data.output.D) << "]";
-        std::vector<Data<T>> batches;
-        size_t size = data.input.D[0];
-
+        std::vector<arma::uvec> batches;
+        batches.reserve(size / batch_size + 1);
         for (size_t i = 0; i < size; i += batch_size) {
-            auto cur_batch_size = batch_size;
-            if (i + batch_size >= size) {
-                cur_batch_size = size - i;
-            }
-            arma::uvec rows = arma::linspace<arma::uvec>(i, i + cur_batch_size - 1, cur_batch_size);
-            batches.push_back(Data<T>{data.input.Rows(rows), data.output.Rows(rows)});
+            auto cur_batch_size = std::min(batch_size, size - i);
+            batches.emplace_back(ordering.subvec(i, i + cur_batch_size - 1));
         }
         return batches;
     }
